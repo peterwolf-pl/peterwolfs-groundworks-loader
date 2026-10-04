@@ -3,6 +3,7 @@ build/
 bin/
 run/
 out/
+logs/
 .idea
 *.iml
 .DS_Store
