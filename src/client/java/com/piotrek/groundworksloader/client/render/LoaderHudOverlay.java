@@ -51,7 +51,14 @@ public class LoaderHudOverlay implements HudElement {
 
         // Boom Elevation
         float boom = loader.getBoomAngle();
-        String boomStatus = boom > 25.0F ? "§6§lW GÓRZE (Załadunek)" : (boom < 5.0F ? "§c§lW DOLE (Robocza)" : "§a§lTRANSPORT");
+        String boomStatus;
+        if (boom > 25.0F) {
+            boomStatus = "§6§lW GÓRZE (Załadunek)";
+        } else if (boom >= -5.0F) {
+            boomStatus = "§a§lPOZIOM GRUNTU";
+        } else {
+            boomStatus = "§c§lGŁĘBOKIE KOPANIE / RÓW";
+        }
         extractor.text(font, String.format("Wysięgnik [↑/↓]: §f%.1f° §7(%s§7)", boom, boomStatus), x, y + 22, 0xFFFFFF, true);
 
         // Bucket Tilt

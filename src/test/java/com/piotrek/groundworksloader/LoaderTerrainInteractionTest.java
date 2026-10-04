@@ -1,8 +1,6 @@
 package com.piotrek.groundworksloader;
 
-import com.piotrek.groundworks.api.material.GranularMaterial;
 import com.piotrek.groundworks.api.material.GranularMaterialRegistry;
-import com.piotrek.groundworks.terrain.cell.GranularCell;
 import com.piotrek.groundworksloader.bucket.LoaderBucketController;
 import com.piotrek.groundworksloader.bucket.LoaderBucketController.BucketTickResult;
 import net.minecraft.core.BlockPos;
@@ -81,6 +79,30 @@ class LoaderTerrainInteractionTest {
         assertTrue(dumpResult.isDumping());
         assertTrue(dumpResult.unitsDeposited() > 0);
         assertEquals(150, controller.carriedUnits() + terrain.countTotalWorldUnits());
+    }
+
+    @Test
+    @DisplayName("Boom lowered below grade into trench excavates deep block microvoxels")
+    void testBelowGradeTrenchExcavation() {
+        TestGranularTerrain terrain = new TestGranularTerrain();
+        LoaderBucketController controller = new LoaderBucketController();
+
+        // Place dirt 1 block below surface level (Y = 63)
+        BlockPos belowPos = new BlockPos(0, 63, 3);
+        terrain.createFullCell(belowPos, GranularMaterialRegistry.DIRT);
+
+        assertEquals(512, terrain.countTotalWorldUnits());
+
+        // Lower boom deeply (-25 deg)
+        controller.setBoomAngle(-25.0F);
+        controller.setBucketAngle(0.0F);
+
+        Vec3 loaderPos = new Vec3(0.0, 64.0, 0.0);
+        BucketTickResult result = controller.tick(terrain, loaderPos, 0.0F, 0.0F, 0.15F);
+
+        assertTrue(result.isScooping());
+        assertTrue(result.unitsExcavated() > 0);
+        assertEquals(512, controller.carriedUnits() + terrain.countTotalWorldUnits());
     }
 
     @Test

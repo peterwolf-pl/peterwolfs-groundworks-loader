@@ -331,17 +331,29 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         );
 
         // ══════════════════════════════════════════════════════════════════════
-        // 3. LOADER LIFT ARMS (Wysięgnik / Boom)
+        // 3. LOADER LIFT ARMS (Wysięgnik łamany w dół / Boomerang Lift Arms)
         // ══════════════════════════════════════════════════════════════════════
         PartDefinition liftArms = frontChassis.addOrReplaceChild(
                 "lift_arms",
                 CubeListBuilder.create()
-                        // Left heavy curved lift beam: UV [0, 174]
-                        .texOffs(0, 174).addBox(-13.0F, -2.5F, 0.0F, 4.0F, 6.0F, 36.0F)
-                        // Right heavy curved lift beam: UV [0, 174]
-                        .texOffs(0, 174).addBox(9.0F, -2.5F, 0.0F, 4.0F, 6.0F, 36.0F)
-                        // Sturdy tubular cross-member: UV [0, 174]
-                        .texOffs(0, 174).addBox(-9.0F, -1.5F, 16.0F, 18.0F, 4.0F, 5.0F),
+                        // Left bent lift arm (ramię łamane w dół): UV [0, 174]
+                        // Upper root beam (od wieży do kolana)
+                        .texOffs(0, 174).addBox(-13.0F, -3.0F, 0.0F, 4.0F, 6.0F, 16.0F)
+                        // Knee elbow joint with torque-tube boss
+                        .texOffs(0, 174).addBox(-13.0F, -1.0F, 14.0F, 4.0F, 7.0F, 8.0F)
+                        // Lower angled beam sloping downwards towards bucket
+                        .texOffs(0, 174).addBox(-13.0F, 3.0F, 20.0F, 4.0F, 6.0F, 10.0F)
+                        // Lower tip beam reaching the bucket hinge pins
+                        .texOffs(0, 174).addBox(-13.0F, 6.0F, 28.0F, 4.0F, 6.0F, 10.0F)
+
+                        // Right bent lift arm (ramię łamane w dół): UV [0, 174]
+                        .texOffs(0, 174).addBox(9.0F, -3.0F, 0.0F, 4.0F, 6.0F, 16.0F)
+                        .texOffs(0, 174).addBox(9.0F, -1.0F, 14.0F, 4.0F, 7.0F, 8.0F)
+                        .texOffs(0, 174).addBox(9.0F, 3.0F, 20.0F, 4.0F, 6.0F, 10.0F)
+                        .texOffs(0, 174).addBox(9.0F, 6.0F, 28.0F, 4.0F, 6.0F, 10.0F)
+
+                        // Sturdy tubular cross-member at the knee elbow: UV [0, 174]
+                        .texOffs(0, 174).addBox(-9.0F, -1.0F, 15.0F, 18.0F, 5.0F, 5.0F),
                 PartPose.offset(0.0F, -5.0F, 8.0F)
         );
 
@@ -350,14 +362,14 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                 "zbar_linkage",
                 CubeListBuilder.create()
                         // Central bell crank pivot & arms: UV [364, 84]
-                        .texOffs(364, 84).addBox(-2.0F, -2.0F, -2.0F, 4.0F, 4.0F, 4.0F)
-                        .texOffs(364, 84).addBox(-1.5F, -10.0F, -2.0F, 3.0F, 8.0F, 3.0F)
-                        .texOffs(364, 84).addBox(-1.5F, 2.0F, -1.0F, 3.0F, 8.0F, 3.0F)
+                        .texOffs(364, 84).addBox(-2.0F, -1.0F, -2.0F, 4.0F, 5.0F, 5.0F)
+                        .texOffs(364, 84).addBox(-1.5F, -9.0F, -2.0F, 3.0F, 8.0F, 3.0F)
+                        .texOffs(364, 84).addBox(-1.5F, 4.0F, 0.0F, 3.0F, 8.0F, 3.0F)
                         // Hydraulic tilt cylinder from frame
-                        .texOffs(364, 84).addBox(-2.0F, -2.0F, -14.0F, 4.0F, 4.0F, 14.0F)
+                        .texOffs(364, 84).addBox(-2.0F, -1.0F, -14.0F, 4.0F, 4.0F, 14.0F)
                         // Dog-bone push rod link to bucket
-                        .texOffs(0, 174).addBox(-1.5F, 7.0F, 1.0F, 3.0F, 3.0F, 16.0F),
-                PartPose.offset(0.0F, 0.0F, 18.0F)
+                        .texOffs(0, 174).addBox(-1.5F, 10.0F, 2.0F, 3.0F, 3.0F, 18.0F),
+                PartPose.offset(0.0F, 0.0F, 16.0F)
         );
 
         // ══════════════════════════════════════════════════════════════════════
@@ -389,7 +401,7 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                         .texOffs(184, 174).addBox(-23.0F, -11.0F, -2.0F, 46.0F, 3.0F, 4.0F)
                         // Top central dog-bone mount horn
                         .texOffs(184, 174).addBox(-2.0F, -12.0F, 2.0F, 4.0F, 5.0F, 4.0F),
-                PartPose.offset(0.0F, 0.0F, 36.0F)
+                PartPose.offset(0.0F, 8.0F, 36.0F)
         );
 
         // ── Dynamic Carried Granular Material inside Bucket: UV [0, 234] ──

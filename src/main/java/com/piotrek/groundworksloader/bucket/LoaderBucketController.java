@@ -18,9 +18,9 @@ import java.util.Set;
  */
 public class LoaderBucketController {
 
-    public static final float MIN_BOOM_ANGLE = -10.0F; // Down on ground level
+    public static final float MIN_BOOM_ANGLE = -35.0F; // Deep trenching / excavation below grade
     public static final float MAX_BOOM_ANGLE = 55.0F;  // High loading dump position
-    public static final float BOOM_SPEED = 1.6F;       // Degrees per tick
+    public static final float BOOM_SPEED = 2.0F;       // Smooth hydraulic travel per tick
 
     public static final float MIN_BUCKET_ANGLE = -35.0F; // Closed / curled up (transport / retention)
     public static final float MAX_BUCKET_ANGLE = 60.0F;  // Fully opened / dumped down
@@ -73,14 +73,14 @@ public class LoaderBucketController {
         float yawRad = (float) Math.toRadians(vehicleYaw);
         float pitchRad = (float) Math.toRadians(vehiclePitch);
 
-        // Boom arm rest geometry (-26 degrees puts bucket level on the ground at boomAngle = 0)
-        float armAngleRad = (float) Math.toRadians(boomAngle - 26.0F);
+        // Boom arm rest geometry (boomerang bent arm reaching deep below grade)
+        float armAngleRad = (float) Math.toRadians(boomAngle - 20.0F);
         float armLength = 2.25F;
         float armPivotY = 1.25F;
         float armPivotZ = 0.50F;
 
-        // Bucket pivot relative to vehicle base
-        float bPivotY = armPivotY + ((float) Math.sin(armAngleRad) * armLength);
+        // Bucket pivot relative to vehicle base (including downward knee bend)
+        float bPivotY = armPivotY + ((float) Math.sin(armAngleRad) * armLength) - 0.50F;
         float bPivotZ = armPivotZ + ((float) Math.cos(armAngleRad) * armLength);
 
         // Bucket lip relative to bucket pivot
@@ -130,13 +130,13 @@ public class LoaderBucketController {
         boolean isDumping = false;
 
         // ── 1. Scooping / Digging (driving forward into ground with lowered bucket) ──
-        if (forwardSpeed > 0.01F && boomAngle < 10.0F && bucketAngle < 20.0F) {
+        if (forwardSpeed > 0.01F && boomAngle < 15.0F && bucketAngle < 20.0F) {
             Set<BlockPos> processed = new HashSet<>();
             for (Vec3 pt : edgePoints) {
                 BlockPos pos = BlockPos.containing(pt.x, pt.y, pt.z);
-                BlockPos below = pos.below();
+                List<BlockPos> targets = List.of(pos.above(), pos, pos.below(), pos.below(2));
 
-                for (BlockPos target : List.of(pos, below)) {
+                for (BlockPos target : targets) {
                     if (processed.add(target) && terrain.isDiggable(target)) {
                         int room = BUCKET_CAPACITY - carriedUnits;
                         if (room > 0) {
