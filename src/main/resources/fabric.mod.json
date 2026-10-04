@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "pw_groundworks_loader",
+  "version": "${version}",
+  "name": "Peterwolf's Groundworks Loader",
+  "description": "Heavy industrial wheel loader designed to scoop, load, carry and dump granular materials for Peterwolf's Groundworks.",
+  "authors": [
+    "Piotrek"
+  ],
+  "contact": {
+    "homepage": "https://github.com/piotrek/peterwolfs-groundworks-loader"
+  },
+  "license": "MIT",
+  "icon": "assets/pw_groundworks_loader/textures/item/loader.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.piotrek.groundworksloader.GroundworksLoaderMod"
+    ],
+    "client": [
+      "com.piotrek.groundworksloader.client.GroundworksLoaderClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~26.3",
+    "java": ">=25",
+    "fabric-api": "*",
+    "pw_groundworks": ">=0.1.0"
+  },
+  "suggests": {
+    "pw_groundworks_bulldozer": "*",
+    "pw_groundworks_excavator": "*"
+  }
+}

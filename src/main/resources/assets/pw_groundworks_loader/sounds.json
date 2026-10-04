@@ -1,0 +1,14 @@
+{
+  "engine_loop": {
+    "subtitle": "subtitles.pw_groundworks_loader.engine_loop",
+    "sounds": [
+      "pw_groundworks_loader:engine_loop"
+    ]
+  },
+  "hydraulics": {
+    "subtitle": "subtitles.pw_groundworks_loader.hydraulics",
+    "sounds": [
+      "minecraft:block.iron.step"
+    ]
+  }
+}

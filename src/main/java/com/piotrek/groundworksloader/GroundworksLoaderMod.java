@@ -1,0 +1,106 @@
+package com.piotrek.groundworksloader;
+
+import com.piotrek.groundworksloader.command.LoaderCommand;
+import com.piotrek.groundworksloader.entity.GroundworksLoaderEntity;
+import com.piotrek.groundworksloader.item.LoaderItem;
+import com.piotrek.groundworksloader.network.LoaderInputPayload;
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class GroundworksLoaderMod implements ModInitializer {
+
+    public static final String MOD_ID = "pw_groundworks_loader";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
+    }
+
+    // ── Entity Registration ──────────────────────────────────────────
+    public static final ResourceKey<EntityType<?>> LOADER_KEY =
+            ResourceKey.create(Registries.ENTITY_TYPE, id("loader"));
+
+    public static final EntityType<GroundworksLoaderEntity> LOADER = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            LOADER_KEY,
+            EntityType.Builder.of(GroundworksLoaderEntity::new, MobCategory.MISC)
+                    .sized(3.0F, 2.8F)
+                    .clientTrackingRange(10)
+                    .build(LOADER_KEY)
+    );
+
+    // ── Sound Registration ──────────────────────────────────────────
+    public static final SoundEvent ENGINE_LOOP = Registry.register(
+            BuiltInRegistries.SOUND_EVENT,
+            id("engine_loop"),
+            SoundEvent.createFixedRangeEvent(id("engine_loop"), 48.0F)
+    );
+
+    // ── Item Registration ────────────────────────────────────────────
+    public static final ResourceKey<Item> LOADER_ITEM_KEY =
+            ResourceKey.create(Registries.ITEM, id("loader"));
+
+    public static final LoaderItem LOADER_ITEM = Registry.register(
+            BuiltInRegistries.ITEM,
+            LOADER_ITEM_KEY,
+            new LoaderItem(new Item.Properties().setId(LOADER_ITEM_KEY).stacksTo(1))
+    );
+
+    public static final ResourceKey<CreativeModeTab> TOOLS_AND_UTILITIES_TAB = ResourceKey.create(
+            Registries.CREATIVE_MODE_TAB,
+            Identifier.withDefaultNamespace("tools_and_utilities")
+    );
+
+    @Override
+    public void onInitialize() {
+        LOGGER.info("Initializing Peterwolf's Groundworks Loader for MC 26.3...");
+
+        // 1. Networking registration
+        PayloadTypeRegistry.serverboundPlay().register(
+                LoaderInputPayload.TYPE, LoaderInputPayload.CODEC
+        );
+
+        ServerPlayNetworking.registerGlobalReceiver(
+                LoaderInputPayload.TYPE, (payload, context) -> {
+                    context.server().execute(() -> {
+                        ServerPlayer player = context.player();
+                        if (player.getVehicle() instanceof GroundworksLoaderEntity loader
+                                && loader.isDriver(player)) {
+                            loader.setControlInputs(
+                                    payload.throttle(),
+                                    payload.steer(),
+                                    payload.boomLift(),
+                                    payload.bucketTilt()
+                            );
+                        }
+                    });
+                }
+        );
+
+        // 2. Command registration
+        CommandRegistrationCallback.EVENT.register(
+                (dispatcher, registryAccess, environment) -> LoaderCommand.register(dispatcher)
+        );
+
+        // 3. Creative Tab placement
+        CreativeModeTabEvents.modifyOutputEvent(TOOLS_AND_UTILITIES_TAB).register(output -> {
+            output.accept(LOADER_ITEM);
+        });
+    }
+}
