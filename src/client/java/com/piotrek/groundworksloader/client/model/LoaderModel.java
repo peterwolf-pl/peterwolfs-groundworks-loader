@@ -405,8 +405,8 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
 
     @Override
     public void setupAnim(LoaderRenderState state) {
-        // 1. Articulated Steering: Front chassis turns relative to rear chassis
-        float steerRad = (float) Math.toRadians(-state.steerAngle);
+        // 1. Articulated Steering: Front chassis turns with vehicle steering
+        float steerRad = (float) Math.toRadians(state.steerAngle);
         this.frontChassis.yRot = steerRad;
 
         // 2. Rolling Wheel Animation (degrees)
@@ -416,16 +416,16 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         this.frontLeftWheel.xRot = wheelRad;
         this.frontRightWheel.xRot = wheelRad;
 
-        // 3. Boom Elevation (Arrow Up / Down)
-        float boomRad = (float) Math.toRadians(-state.boomAngle);
+        // 3. Boom Elevation (Arrow Up = raise, Arrow Down = lower)
+        float boomRad = (float) Math.toRadians(state.boomAngle);
         this.liftArms.xRot = boomRad;
 
         // Hydraulic lift cylinders angle with the boom
         this.leftLiftCylinder.xRot = boomRad * 0.65F;
         this.rightLiftCylinder.xRot = boomRad * 0.65F;
 
-        // 4. Bucket Tilt (Arrow Left = curl / -angle, Arrow Right = dump / +angle)
-        float bucketRad = (float) Math.toRadians(state.bucketAngle);
+        // 4. Bucket Tilt: positive angle = open (tilts down to dump), negative angle = close (curls up)
+        float bucketRad = (float) Math.toRadians(-state.bucketAngle);
         this.bucket.xRot = bucketRad;
 
         // Z-Bar bell crank pivots proportionally as bucket tilts

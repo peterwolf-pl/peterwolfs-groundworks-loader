@@ -51,12 +51,12 @@ public class LoaderHudOverlay implements HudElement {
 
         // Boom Elevation
         float boom = loader.getBoomAngle();
-        String boomStatus = boom > 30.0F ? "§6§lZAŁADUNEK" : (boom < 0.0F ? "§c§lSKRAWANIE" : "§a§lJAZDA");
+        String boomStatus = boom > 25.0F ? "§6§lW GÓRZE (Załadunek)" : (boom < 5.0F ? "§c§lW DOLE (Robocza)" : "§a§lTRANSPORT");
         extractor.text(font, String.format("Wysięgnik [↑/↓]: §f%.1f° §7(%s§7)", boom, boomStatus), x, y + 22, 0xFFFFFF, true);
 
         // Bucket Tilt
         float bucket = loader.getBucketAngle();
-        String bucketStatus = bucket > 20.0F ? "§c§lWYSYP" : (bucket < -15.0F ? "§a§lZAMKNIĘTA" : "§ePOZIOMO");
+        String bucketStatus = bucket > 15.0F ? "§c§lOTWARTA (Wysyp)" : (bucket < -10.0F ? "§a§lZAMKNIĘTA" : "§ePOZIOMO");
         extractor.text(font, String.format("Łyżka [←/→]: §f%.1f° §7(%s§7)", bucket, bucketStatus), x, y + 33, 0xFFFFFF, true);
 
         // Carried Material & Fill Bar

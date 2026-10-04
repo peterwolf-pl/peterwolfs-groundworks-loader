@@ -54,6 +54,36 @@ class LoaderTerrainInteractionTest {
     }
 
     @Test
+    @DisplayName("Curled bucket retains material without dumping until opened")
+    void testCurledBucketDoesNotDump() {
+        TestGranularTerrain terrain = new TestGranularTerrain();
+        LoaderBucketController controller = new LoaderBucketController();
+
+        // Pre-fill bucket with 150 units of dirt
+        controller.setCarriedUnits(150);
+        controller.setCarriedMaterial(GranularMaterialRegistry.DIRT);
+
+        // Curled closed bucket (-20 deg)
+        controller.setBoomAngle(20.0F);
+        controller.setBucketAngle(-20.0F);
+
+        Vec3 loaderPos = new Vec3(0.0, 64.0, 0.0);
+        BucketTickResult result = controller.tick(terrain, loaderPos, 0.0F, 0.0F, 0.0F);
+
+        assertFalse(result.isDumping());
+        assertEquals(0, result.unitsDeposited());
+        assertEquals(150, controller.carriedUnits());
+
+        // Now open / dump bucket (+35 deg)
+        controller.setBucketAngle(35.0F);
+        BucketTickResult dumpResult = controller.tick(terrain, loaderPos, 0.0F, 0.0F, 0.0F);
+
+        assertTrue(dumpResult.isDumping());
+        assertTrue(dumpResult.unitsDeposited() > 0);
+        assertEquals(150, controller.carriedUnits() + terrain.countTotalWorldUnits());
+    }
+
+    @Test
     @DisplayName("Tilted bucket dumps material to ground and conserves volume")
     void testDumpingVolumeConservation() {
         TestGranularTerrain terrain = new TestGranularTerrain();

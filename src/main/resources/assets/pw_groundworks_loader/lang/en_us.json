@@ -4,8 +4,8 @@
   "key.categories.pw_groundworks_loader": "Groundworks Wheel Loader",
   "key.pw_groundworks_loader.boom_up": "Raise Boom (Arrow Up)",
   "key.pw_groundworks_loader.boom_down": "Lower Boom (Arrow Down)",
-  "key.pw_groundworks_loader.bucket_curl": "Curl Bucket (Arrow Left)",
-  "key.pw_groundworks_loader.bucket_dump": "Dump Bucket (Arrow Right)",
+  "key.pw_groundworks_loader.bucket_open": "Open / Dump Bucket (Arrow Left)",
+  "key.pw_groundworks_loader.bucket_close": "Close / Curl Bucket (Arrow Right)",
   "subtitles.pw_groundworks_loader.engine_loop": "Wheel loader engine rumbles",
   "subtitles.pw_groundworks_loader.hydraulics": "Hydraulics hiss"
 }

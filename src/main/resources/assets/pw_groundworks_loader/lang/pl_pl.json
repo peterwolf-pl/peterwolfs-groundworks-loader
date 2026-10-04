@@ -2,10 +2,10 @@
   "item.pw_groundworks_loader.loader": "Ładowarka kołowa Groundworks",
   "entity.pw_groundworks_loader.loader": "Ładowarka kołowa Groundworks",
   "key.categories.pw_groundworks_loader": "Ładowarka Groundworks",
-  "key.pw_groundworks_loader.boom_up": "Podnoszenie łyżki (Strzałka w górę)",
-  "key.pw_groundworks_loader.boom_down": "Opuszczanie łyżki (Strzałka w dół)",
-  "key.pw_groundworks_loader.bucket_curl": "Zamykanie łyżki (Strzałka w lewo)",
-  "key.pw_groundworks_loader.bucket_dump": "Otwieranie / wysyp łyżki (Strzałka w prawo)",
+  "key.pw_groundworks_loader.boom_up": "Podnoszenie wysięgnika (Strzałka w górę)",
+  "key.pw_groundworks_loader.boom_down": "Opuszczanie wysięgnika (Strzałka w dół)",
+  "key.pw_groundworks_loader.bucket_open": "Otwieranie / wysyp łyżki (Strzałka w lewo)",
+  "key.pw_groundworks_loader.bucket_close": "Zamykanie łyżki (Strzałka w prawo)",
   "subtitles.pw_groundworks_loader.engine_loop": "Warkot silnika ładowarki",
   "subtitles.pw_groundworks_loader.hydraulics": "Syk hydrauliki"
 }

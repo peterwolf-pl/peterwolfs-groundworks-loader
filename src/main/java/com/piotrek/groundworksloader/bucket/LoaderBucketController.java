@@ -18,15 +18,15 @@ import java.util.Set;
  */
 public class LoaderBucketController {
 
-    public static final float MIN_BOOM_ANGLE = -12.0F; // Digging / scooping ground level
+    public static final float MIN_BOOM_ANGLE = -10.0F; // Down on ground level
     public static final float MAX_BOOM_ANGLE = 55.0F;  // High loading dump position
     public static final float BOOM_SPEED = 1.6F;       // Degrees per tick
 
-    public static final float MIN_BUCKET_ANGLE = -35.0F; // Curled up (transport / retention)
-    public static final float MAX_BUCKET_ANGLE = 65.0F;  // Fully dumped down
+    public static final float MIN_BUCKET_ANGLE = -35.0F; // Closed / curled up (transport / retention)
+    public static final float MAX_BUCKET_ANGLE = 60.0F;  // Fully opened / dumped down
     public static final float BUCKET_SPEED = 2.2F;       // Degrees per tick
 
-    public static final float DUMP_THRESHOLD_ANGLE = 18.0F; // Tilt angle where material flows out
+    public static final float DUMP_THRESHOLD_ANGLE = 15.0F; // Tilt angle where material flows out
     public static final int BUCKET_CAPACITY = 768;          // 1.5 blocks of granular material
     public static final float BUCKET_WIDTH_METERS = 2.8F;
 

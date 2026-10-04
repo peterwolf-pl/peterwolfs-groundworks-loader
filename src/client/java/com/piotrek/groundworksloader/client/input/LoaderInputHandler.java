@@ -54,10 +54,10 @@ public final class LoaderInputHandler {
             boolean boomDown = (LoaderKeyBindings.KEY_BOOM_DOWN != null && LoaderKeyBindings.KEY_BOOM_DOWN.isDown())
                     || (inGame && InputConstants.isKeyDown(InputConstants.KEY_DOWN));
 
-            // Read bucket tilt inputs (Arrow Left = curl, Arrow Right = dump)
-            boolean bucketCurl = (LoaderKeyBindings.KEY_BUCKET_CURL != null && LoaderKeyBindings.KEY_BUCKET_CURL.isDown())
+            // Read bucket tilt inputs (Arrow Left = open/dump, Arrow Right = close/curl)
+            boolean bucketOpen = (LoaderKeyBindings.KEY_BUCKET_OPEN != null && LoaderKeyBindings.KEY_BUCKET_OPEN.isDown())
                     || (inGame && InputConstants.isKeyDown(InputConstants.KEY_LEFT));
-            boolean bucketDump = (LoaderKeyBindings.KEY_BUCKET_DUMP != null && LoaderKeyBindings.KEY_BUCKET_DUMP.isDown())
+            boolean bucketClose = (LoaderKeyBindings.KEY_BUCKET_CLOSE != null && LoaderKeyBindings.KEY_BUCKET_CLOSE.isDown())
                     || (inGame && InputConstants.isKeyDown(InputConstants.KEY_RIGHT));
 
             float throttle = 0.0F;
@@ -73,8 +73,8 @@ public final class LoaderInputHandler {
             if (boomUp) boomLift += 1.0F;
             if (boomDown) boomLift -= 1.0F;
 
-            if (bucketDump) bucketTilt += 1.0F;
-            if (bucketCurl) bucketTilt -= 1.0F;
+            if (bucketOpen) bucketTilt += 1.0F;  // Left Arrow opens bucket (+angle = open)
+            if (bucketClose) bucketTilt -= 1.0F; // Right Arrow closes bucket (-angle = closed)
 
             boolean changed = throttle != lastThrottle
                     || steer != lastSteer

@@ -15,8 +15,8 @@ public final class LoaderKeyBindings {
 
     public static KeyMapping KEY_BOOM_UP;
     public static KeyMapping KEY_BOOM_DOWN;
-    public static KeyMapping KEY_BUCKET_CURL;
-    public static KeyMapping KEY_BUCKET_DUMP;
+    public static KeyMapping KEY_BUCKET_OPEN;
+    public static KeyMapping KEY_BUCKET_CLOSE;
 
     private LoaderKeyBindings() {}
 
@@ -35,15 +35,15 @@ public final class LoaderKeyBindings {
                 CATEGORY
         ));
 
-        KEY_BUCKET_CURL = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.pw_groundworks_loader.bucket_curl",
+        KEY_BUCKET_OPEN = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.pw_groundworks_loader.bucket_open",
                 InputConstants.Type.KEYBOARD,
                 InputConstants.KEY_LEFT,
                 CATEGORY
         ));
 
-        KEY_BUCKET_DUMP = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "key.pw_groundworks_loader.bucket_dump",
+        KEY_BUCKET_CLOSE = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.pw_groundworks_loader.bucket_close",
                 InputConstants.Type.KEYBOARD,
                 InputConstants.KEY_RIGHT,
                 CATEGORY
