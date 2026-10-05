@@ -1,7 +1,6 @@
 package com.piotrek.groundworksloader;
 
 import com.piotrek.groundworks.api.material.GranularMaterial;
-import com.piotrek.groundworks.api.material.GranularMaterialRegistry;
 import com.piotrek.groundworks.terrain.cell.GranularCell;
 import com.piotrek.groundworksloader.integration.groundworks.IGranularTerrainAccess;
 import net.minecraft.core.BlockPos;
@@ -12,9 +11,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * In-memory test implementation of {@link IGranularTerrainAccess} for deterministic unit testing.
+ * In-memory test implementation of {@link IGranularTerrainAccess}.
  */
 public class TestGranularTerrain implements IGranularTerrainAccess {
+
+    private static final double EPSILON = 1.0E-9D;
 
     private final Map<BlockPos, GranularCell> cells = new HashMap<>();
     private final Map<BlockPos, GranularMaterial> convertibleBlocks = new HashMap<>();
@@ -51,38 +52,46 @@ public class TestGranularTerrain implements IGranularTerrainAccess {
     }
 
     @Override
-    public GranularCell getCell(BlockPos pos) {
-        return cells.get(pos);
+    public GranularMaterial getMaterial(BlockPos pos) {
+        GranularCell cell = cells.get(pos);
+        if (cell != null && !cell.isEmpty()) {
+            return cell.material();
+        }
+        GranularMaterial convertible = convertibleBlocks.get(pos);
+        return convertible != null ? convertible : GranularMaterial.EMPTY;
     }
 
     @Override
-    public GranularCell getOrConvert(BlockPos pos) {
-        BlockPos key = pos.immutable();
-        GranularCell existing = cells.get(key);
-        if (existing != null) return existing;
-        GranularMaterial material = convertibleBlocks.remove(key);
-        GranularCell converted = material != null
-                ? GranularCell.full(material)
-                : GranularCell.empty();
-        if (material == null) converted.setMaterialId(GranularMaterialRegistry.DIRT.id());
-        cells.put(key, converted);
-        return converted;
+    public double getSurfaceWorldY(BlockPos pos, double worldX, double worldZ) {
+        GranularCell cell = cells.get(pos);
+        if (cell != null) {
+            int x = microCoordinate(worldX - pos.getX());
+            int z = microCoordinate(worldZ - pos.getZ());
+            int top = cell.getColumnHeight(x, z);
+            return top < 0
+                    ? Double.NEGATIVE_INFINITY
+                    : pos.getY() + (top + 1) / (double) GranularCell.RESOLUTION;
+        }
+        return convertibleBlocks.containsKey(pos)
+                ? pos.getY() + 1.0D
+                : Double.NEGATIVE_INFINITY;
     }
 
     @Override
     public int excavateMicrovoxelsAbove(BlockPos pos, double worldCutY, int maxUnits) {
         if (maxUnits <= 0) return 0;
-        GranularCell cell = cells.get(pos);
+
+        GranularCell cell = getOrConvert(pos);
         if (cell == null || cell.isEmpty()) return 0;
 
         double localCutY = (worldCutY - pos.getY()) * GranularCell.RESOLUTION;
-        if (localCutY >= GranularCell.RESOLUTION) return 0;
+        int startY = localCutY <= 0.0D
+                ? 0
+                : (int) Math.ceil(localCutY - EPSILON);
+        if (startY >= GranularCell.RESOLUTION) return 0;
 
         int removed = 0;
-        int startY = Math.max(0, (int) Math.floor(localCutY));
-
         for (int y = GranularCell.RESOLUTION - 1; y >= startY && removed < maxUnits; y--) {
-            if (y < localCutY) continue;
             for (int z = 0; z < GranularCell.RESOLUTION && removed < maxUnits; z++) {
                 for (int x = 0; x < GranularCell.RESOLUTION && removed < maxUnits; x++) {
                     if (cell.clear(x, y, z)) {
@@ -95,7 +104,6 @@ public class TestGranularTerrain implements IGranularTerrainAccess {
         if (cell.isEmpty()) {
             cells.remove(pos);
         }
-
         return removed;
     }
 
@@ -107,7 +115,7 @@ public class TestGranularTerrain implements IGranularTerrainAccess {
         int totalAdded = 0;
         BlockPos current = pos;
 
-        for (int attempt = 0; attempt < 4 && remaining > 0; attempt++) {
+        for (int attempt = 0; attempt < 8 && remaining > 0; attempt++) {
             GranularCell cell = cells.computeIfAbsent(current.immutable(), p -> {
                 GranularCell c = GranularCell.empty();
                 c.setMaterialId(material.id());
@@ -135,5 +143,29 @@ public class TestGranularTerrain implements IGranularTerrainAccess {
     @Override
     public void markSimulate(BlockPos pos) {
         simulatedPositions.add(pos.immutable());
+    }
+
+    private GranularCell getOrConvert(BlockPos pos) {
+        BlockPos key = pos.immutable();
+        GranularCell existing = cells.get(key);
+        if (existing != null) {
+            return existing;
+        }
+
+        GranularMaterial material = convertibleBlocks.remove(key);
+        if (material == null) {
+            return null;
+        }
+
+        GranularCell converted = GranularCell.full(material);
+        cells.put(key, converted);
+        return converted;
+    }
+
+    private static int microCoordinate(double localCoordinate) {
+        return Math.max(0, Math.min(
+                GranularCell.RESOLUTION - 1,
+                (int) Math.floor(localCoordinate * GranularCell.RESOLUTION)
+        ));
     }
 }

@@ -1,19 +1,18 @@
 package com.piotrek.groundworksloader.integration.groundworks;
 
 import com.piotrek.groundworks.api.material.GranularMaterial;
-import com.piotrek.groundworks.terrain.cell.GranularCell;
 import net.minecraft.core.BlockPos;
 
 /**
- * Common abstraction over Groundworks granular terrain.
+ * Testable machine-facing subset of the public Groundworks terrain API.
  */
 public interface IGranularTerrainAccess {
 
     boolean isDiggable(BlockPos pos);
 
-    GranularCell getCell(BlockPos pos);
+    GranularMaterial getMaterial(BlockPos pos);
 
-    GranularCell getOrConvert(BlockPos pos);
+    double getSurfaceWorldY(BlockPos pos, double worldX, double worldZ);
 
     int excavateMicrovoxelsAbove(BlockPos pos, double worldCutY, int maxUnits);
 

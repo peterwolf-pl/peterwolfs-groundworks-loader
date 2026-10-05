@@ -1,7 +1,6 @@
 package com.piotrek.groundworksloader.vehicle;
 
-import com.piotrek.groundworks.terrain.cell.GranularCell;
-import com.piotrek.groundworks.terrain.storage.GranularWorldStorage;
+import com.piotrek.groundworks.api.GroundworksApi;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -203,26 +202,16 @@ public class LoaderMovementController {
     public static double sampleGroundHeight(Level level, double x, double vehicleY, double z) {
         BlockPos bp = BlockPos.containing(x, vehicleY + 0.8D, z);
 
-        GranularWorldStorage storage = null;
-        if (level instanceof ServerLevel sl) {
-            storage = GranularWorldStorage.get(sl);
-        }
-
         for (int dy = 0; dy <= 4; dy++) {
             BlockPos check = bp.below(dy);
-            if (storage != null) {
-                GranularCell cell = storage.getCell(check);
-                if (cell != null && !cell.isEmpty()) {
-                    int localX = (int) Math.floor((x - check.getX()) * GranularCell.RESOLUTION);
-                    int localZ = (int) Math.floor((z - check.getZ()) * GranularCell.RESOLUTION);
-                    localX = Mth.clamp(localX, 0, GranularCell.RESOLUTION - 1);
-                    localZ = Mth.clamp(localZ, 0, GranularCell.RESOLUTION - 1);
-                    int colH = cell.getColumnHeight(localX, localZ);
-                    if (colH >= 0) {
-                        return check.getY() + ((colH + 1) / (double) GranularCell.RESOLUTION);
-                    }
+            if (level instanceof ServerLevel serverLevel) {
+                double surfaceY = GroundworksApi.getSurfaceWorldY(
+                        serverLevel, check, x, z);
+                if (Double.isFinite(surfaceY)) {
+                    return surfaceY;
                 }
             }
+
             BlockState state = level.getBlockState(check);
             if (!state.isAir()) {
                 VoxelShape shape = state.getCollisionShape(level, check);
