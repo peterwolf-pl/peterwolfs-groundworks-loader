@@ -1,7 +1,7 @@
 package com.piotrek.groundworksloader.bucket;
 
+import com.piotrek.groundworks.api.excavation.ExcavationResult;
 import com.piotrek.groundworks.api.material.GranularMaterial;
-import com.piotrek.groundworks.api.material.GranularMaterialRegistry;
 import com.piotrek.groundworksloader.integration.groundworks.IGranularTerrainAccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
@@ -16,22 +16,28 @@ import java.util.Set;
  */
 public class LoaderBucketController {
 
-    public static final float MIN_BOOM_ANGLE = -35.0F; // Deep trenching / excavation below grade
-    public static final float MAX_BOOM_ANGLE = 55.0F;  // High loading dump position
-    public static final float BOOM_SPEED = 2.0F;       // Smooth hydraulic travel per tick
+    public static final float MIN_BOOM_ANGLE = -35.0F;
+    public static final float MAX_BOOM_ANGLE = 55.0F;
+    public static final float BOOM_SPEED = 2.0F;
 
-    public static final float MIN_BUCKET_ANGLE = -40.0F; // Closed / curled up (transport / retention)
-    public static final float MAX_BUCKET_ANGLE = 90.0F;  // Fully opened / dumped down (steep discharge angle)
-    public static final float BUCKET_SPEED = 2.8F;       // Fast hydraulic tilt speed
+    public static final float MIN_BUCKET_ANGLE = -40.0F;
+    public static final float MAX_BUCKET_ANGLE = 90.0F;
+    public static final float BUCKET_SPEED = 2.8F;
 
-    public static final float DUMP_THRESHOLD_ANGLE = 15.0F; // Tilt angle where material flows out
-    public static final int BUCKET_CAPACITY = 1664;         // 3.25 blocks of granular material (over 3 full blocks)
+    public static final float DUMP_THRESHOLD_ANGLE = 15.0F;
+    public static final int BUCKET_CAPACITY = 1664;
     public static final float BUCKET_WIDTH_METERS = 2.8F;
+
+    private static final int MAX_EXCAVATION_PER_TICK = 160;
+    private static final int MAX_EXCAVATION_PER_CONTACT = 32;
+    private static final double CONTACT_SURFACE_TOLERANCE = 0.10D;
+    private static final int DUMP_SURFACE_SEARCH_DEPTH = 14;
 
     private float boomAngle = 0.0F;
     private float bucketAngle = 0.0F;
     private int carriedUnits = 0;
     private GranularMaterial carriedMaterial = GranularMaterial.EMPTY;
+    private List<Vec3> previousCuttingEdgePoints = List.of();
 
     public record BucketTickResult(
             int unitsExcavated,
@@ -48,15 +54,20 @@ public class LoaderBucketController {
         );
     }
 
+    private record ContactTarget(BlockPos pos, GranularMaterial material) {}
+
+    private record ResolvedSweepContact(
+            Vec3 worldPoint,
+            ContactTarget target
+    ) {}
+
     public void updateAngles(float boomInput, float bucketInput) {
-        // Boom Lift (Arrow Up / Down)
         if (boomInput > 0.05F) {
             boomAngle = Math.min(MAX_BOOM_ANGLE, boomAngle + (BOOM_SPEED * boomInput));
         } else if (boomInput < -0.05F) {
             boomAngle = Math.max(MIN_BOOM_ANGLE, boomAngle + (BOOM_SPEED * boomInput));
         }
 
-        // Bucket Tilt (Arrow Left = curl / -1.0, Arrow Right = dump / +1.0)
         if (bucketInput > 0.05F) {
             bucketAngle = Math.min(MAX_BUCKET_ANGLE, bucketAngle + (BUCKET_SPEED * bucketInput));
         } else if (bucketInput < -0.05F) {
@@ -71,17 +82,12 @@ public class LoaderBucketController {
         float yawRad = (float) Math.toRadians(vehicleYaw);
         float pitchRad = (float) Math.toRadians(vehiclePitch);
 
-        // 1:1 match with LoaderModel 3D kinematics:
-        // liftArms.xRot = toRadians(boomAngle)
-        // bucket.xRot = toRadians(-bucketAngle)
         float boomRad = (float) Math.toRadians(boomAngle);
         float bucketRad = (float) Math.toRadians(-bucketAngle);
 
-        // 1. Arm pivot in vehicle coordinates (meters above ground contact)
         double armPivotY = 1.8125D;
         double armPivotZ = 0.50D;
 
-        // 2. Bucket pivot relative to arm pivot
         double bRelY = -1.21875D;
         double bRelZ = 2.125D;
 
@@ -90,7 +96,6 @@ public class LoaderBucketController {
         double bucketPivotY = armPivotY + (bRelY * cosB + bRelZ * sinB);
         double bucketPivotZ = armPivotZ + (-bRelY * sinB + bRelZ * cosB);
 
-        // 3. Teeth relative to bucket pivot
         double tRelY = -0.28125D;
         double tRelZ = 1.00D;
 
@@ -106,14 +111,11 @@ public class LoaderBucketController {
         float[] xOffsets = new float[]{-halfW, -halfW * 0.5F, 0.0F, halfW * 0.5F, halfW};
 
         for (float x : xOffsets) {
-            // Rotate around vehicle axes
-            // Pitch (around X)
             double cosP = Math.cos(pitchRad);
             double sinP = Math.sin(pitchRad);
             double py = (lipRelY * cosP) - (lipRelZ * sinP);
             double pz = (lipRelY * sinP) + (lipRelZ * cosP);
 
-            // Yaw (around Y)
             double cosY = Math.cos(-yawRad);
             double sinY = Math.sin(-yawRad);
             double wx = (x * cosY) + (pz * sinY);
@@ -133,7 +135,19 @@ public class LoaderBucketController {
             float forwardSpeed
     ) {
         List<Vec3> edgePoints = getCuttingEdgePoints(vehiclePos, vehicleYaw, vehiclePitch);
-        Vec3 lipCenter = edgePoints.get(2); // Center point
+        Vec3 lipCenter = edgePoints.get(edgePoints.size() / 2);
+
+        List<Vec3> previousEdge = previousCuttingEdgePoints;
+        if (previousEdge.size() != edgePoints.size()) {
+            previousEdge = inferPreviousEdgeFromVehicleMotion(
+                    edgePoints, vehicleYaw, forwardSpeed);
+        }
+
+        LoaderSweptBucketVolume.SweptResult sweep =
+                LoaderSweptBucketVolume.compute(previousEdge, edgePoints);
+
+        // Store current geometry for the next tick before mutating terrain.
+        previousCuttingEdgePoints = List.copyOf(edgePoints);
 
         int totalExcavated = 0;
         int totalDeposited = 0;
@@ -141,61 +155,120 @@ public class LoaderBucketController {
         boolean isScooping = false;
         boolean isDumping = false;
 
-        // ── 1. Scooping / Digging (driving forward into ground with lowered bucket) ──
-        if (forwardSpeed > 0.01F && bucketAngle < 20.0F) {
-            Set<BlockPos> processed = new HashSet<>();
-            for (Vec3 pt : edgePoints) {
-                BlockPos pos = BlockPos.containing(pt.x, pt.y, pt.z);
-                List<BlockPos> targets = List.of(pos.above(), pos, pos.below(), pos.below(2));
+        // ── 1. Swept world-space scooping ───────────────────────────────────
+        if (forwardSpeed > 0.01F
+                && bucketAngle < 20.0F
+                && sweep.valid()) {
 
-                for (BlockPos target : targets) {
-                    if (processed.add(target) && terrain.isDiggable(target)) {
-                        double surfaceY =
-                                terrain.getSurfaceWorldY(target, pt.x, pt.z);
+            // Resolve contacts before excavation so the per-tick intake budget
+            // can be distributed across the entire swept edge instead of being
+            // consumed by the first few teeth in iteration order.
+            List<ResolvedSweepContact> resolvedContacts = new ArrayList<>();
+            for (LoaderSweptBucketVolume.Contact contact : sweep.contacts()) {
+                ContactTarget target = resolveContact(terrain, contact.worldPoint());
+                if (target == null) {
+                    continue;
+                }
+                if (carriedMaterial != GranularMaterial.EMPTY
+                        && target.material() != GranularMaterial.EMPTY
+                        && target.material().id() != carriedMaterial.id()) {
+                    continue;
+                }
+                resolvedContacts.add(new ResolvedSweepContact(
+                        contact.worldPoint(), target));
+            }
 
-                        // Strict physical contact gate: teeth must be AT OR BELOW the surface of the material!
-                        // If teeth are visually hovering above the ground, it will NEVER scoop!
-                        if (pt.y < surfaceY + 0.05D) {
-                            int room = BUCKET_CAPACITY - carriedUnits;
-                            if (room > 0) {
-                                GranularMaterial sourceMaterial = terrain.getMaterial(target);
-                                int toRemove = Math.min(room, 64);
-                                int removed = terrain.excavateMicrovoxelsAbove(target, pt.y, toRemove);
-                                if (removed > 0) {
-                                    totalExcavated += removed;
-                                    carriedUnits += removed;
-                                    affected.add(target);
-                                    isScooping = true;
+            for (int i = 0; i < resolvedContacts.size(); i++) {
+                if (carriedUnits >= BUCKET_CAPACITY
+                        || totalExcavated >= MAX_EXCAVATION_PER_TICK) {
+                    break;
+                }
 
-                                    if (carriedMaterial == GranularMaterial.EMPTY
-                                            && sourceMaterial != GranularMaterial.EMPTY) {
-                                        carriedMaterial = sourceMaterial;
-                                    }
-                                    if (carriedMaterial == GranularMaterial.EMPTY) {
-                                        carriedMaterial = GranularMaterialRegistry.DIRT;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                ResolvedSweepContact contact = resolvedContacts.get(i);
+                ContactTarget target = contact.target();
+
+                if (carriedMaterial != GranularMaterial.EMPTY
+                        && target.material() != GranularMaterial.EMPTY
+                        && target.material().id() != carriedMaterial.id()) {
+                    continue;
+                }
+
+                int room = BUCKET_CAPACITY - carriedUnits;
+                int remainingBudget = MAX_EXCAVATION_PER_TICK - totalExcavated;
+                int remainingContacts = resolvedContacts.size() - i;
+
+                // Fair-share the remaining budget across all remaining contacts.
+                // This makes the cut represent the whole swept bucket volume,
+                // rather than only the first left-to-right tooth samples.
+                int fairShare = Math.max(
+                        1,
+                        (remainingBudget + remainingContacts - 1) / remainingContacts
+                );
+                int requested = Math.min(
+                        room,
+                        Math.min(
+                                MAX_EXCAVATION_PER_CONTACT,
+                                Math.min(remainingBudget, fairShare)
+                        )
+                );
+                if (requested <= 0) {
+                    break;
+                }
+
+                ExcavationResult result = terrain.excavateAt(
+                        contact.worldPoint(), requested);
+                if (!result.success()) {
+                    continue;
+                }
+
+                // A world-space brush can cross a material boundary. Never mix
+                // materials in one bucket; restore a rejected material instead.
+                if (carriedMaterial != GranularMaterial.EMPTY
+                        && result.material() != GranularMaterial.EMPTY
+                        && result.material().id() != carriedMaterial.id()) {
+                    terrain.deposit(target.pos(), result.material(), result.unitsRemoved());
+                    continue;
+                }
+
+                totalExcavated += result.unitsRemoved();
+                carriedUnits += result.unitsRemoved();
+                affected.addAll(result.affectedCells());
+                isScooping = true;
+
+                if (carriedMaterial == GranularMaterial.EMPTY) {
+                    carriedMaterial = result.material();
                 }
             }
         }
 
-        // ── 2. Pouring / Dumping (bucket tilted down past threshold) ──
-        if (bucketAngle > DUMP_THRESHOLD_ANGLE && carriedUnits > 0 && carriedMaterial != GranularMaterial.EMPTY) {
+        // ── 2. Gravity surface search + dumping ─────────────────────────────
+        if (bucketAngle > DUMP_THRESHOLD_ANGLE
+                && carriedUnits > 0
+                && carriedMaterial != GranularMaterial.EMPTY) {
+
             float tiltExcess = bucketAngle - DUMP_THRESHOLD_ANGLE;
-            int flowRate = Math.min(carriedUnits, 16 + (int) (tiltExcess * 1.5F));
+            int flowRate = Math.min(
+                    carriedUnits,
+                    16 + (int) (tiltExcess * 1.5F)
+            );
             flowRate = Math.min(flowRate, 96);
 
-            BlockPos dumpTarget = BlockPos.containing(lipCenter.x, lipCenter.y - 0.25D, lipCenter.z);
-            int deposited = terrain.deposit(dumpTarget, carriedMaterial, flowRate);
-            if (deposited > 0) {
-                totalDeposited += deposited;
-                carriedUnits -= deposited;
-                affected.add(dumpTarget);
-                terrain.markSimulate(dumpTarget);
-                isDumping = true;
+            BlockPos dumpTarget = terrain.findDepositSurface(
+                    lipCenter,
+                    carriedMaterial,
+                    DUMP_SURFACE_SEARCH_DEPTH
+            );
+
+            if (dumpTarget != null) {
+                int deposited = terrain.deposit(
+                        dumpTarget, carriedMaterial, flowRate);
+                if (deposited > 0) {
+                    totalDeposited += deposited;
+                    carriedUnits -= deposited;
+                    affected.add(dumpTarget);
+                    terrain.markSimulate(dumpTarget);
+                    isDumping = true;
+                }
             }
 
             if (carriedUnits <= 0) {
@@ -214,6 +287,65 @@ public class LoaderBucketController {
                 lipCenter,
                 new ArrayList<>(affected)
         );
+    }
+
+    private static ContactTarget resolveContact(
+            IGranularTerrainAccess terrain,
+            Vec3 worldPoint
+    ) {
+        BlockPos direct = BlockPos.containing(worldPoint);
+        BlockPos[] candidates = {
+                direct,
+                direct.below()
+        };
+
+        for (BlockPos candidate : candidates) {
+            if (!terrain.isDiggable(candidate)) {
+                continue;
+            }
+
+            double surfaceY = terrain.getSurfaceWorldY(
+                    candidate, worldPoint.x, worldPoint.z);
+            if (!Double.isFinite(surfaceY)) {
+                continue;
+            }
+
+            if (worldPoint.y <= surfaceY + CONTACT_SURFACE_TOLERANCE) {
+                return new ContactTarget(
+                        candidate,
+                        terrain.getMaterial(candidate)
+                );
+            }
+        }
+
+        return null;
+    }
+
+    private static List<Vec3> inferPreviousEdgeFromVehicleMotion(
+            List<Vec3> currentEdge,
+            float vehicleYaw,
+            float forwardSpeed
+    ) {
+        if (Math.abs(forwardSpeed) < LoaderSweptBucketVolume.MIN_SWEEP_DISTANCE) {
+            return currentEdge;
+        }
+
+        double yawRad = Math.toRadians(vehicleYaw);
+        Vec3 vehicleDelta = new Vec3(
+                -Math.sin(yawRad) * forwardSpeed,
+                0.0D,
+                Math.cos(yawRad) * forwardSpeed
+        );
+
+        List<Vec3> inferred = new ArrayList<>(currentEdge.size());
+        for (Vec3 point : currentEdge) {
+            inferred.add(point.subtract(vehicleDelta));
+        }
+        return inferred;
+    }
+
+    public void resetSweepHistory() {
+        previousCuttingEdgePoints = List.of();
     }
 
     public float boomAngle() {
@@ -245,6 +377,7 @@ public class LoaderBucketController {
     }
 
     public void setCarriedMaterial(GranularMaterial carriedMaterial) {
-        this.carriedMaterial = carriedMaterial != null ? carriedMaterial : GranularMaterial.EMPTY;
+        this.carriedMaterial =
+                carriedMaterial != null ? carriedMaterial : GranularMaterial.EMPTY;
     }
 }

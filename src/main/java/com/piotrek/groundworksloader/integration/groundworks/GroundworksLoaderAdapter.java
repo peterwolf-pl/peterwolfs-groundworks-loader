@@ -6,6 +6,9 @@ import com.piotrek.groundworks.api.excavation.ExcavationResult;
 import com.piotrek.groundworks.api.material.GranularMaterial;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Thin server-side bridge from the Wheel Loader to the public Groundworks API.
@@ -39,13 +42,37 @@ public class GroundworksLoaderAdapter implements IGranularTerrainAccess {
     }
 
     @Override
-    public int excavateMicrovoxelsAbove(BlockPos pos, double worldCutY, int maxUnits) {
+    public ExcavationResult excavateAt(Vec3 worldPoint, int maxUnits) {
         if (maxUnits <= 0) {
-            return 0;
+            return ExcavationResult.NONE;
         }
-        ExcavationResult result =
-                GroundworksApi.excavateAbove(level, pos, worldCutY, maxUnits);
-        return result.unitsRemoved();
+        return GroundworksApi.excavateAt(level, worldPoint, maxUnits);
+    }
+
+    @Override
+    @Nullable
+    public BlockPos findDepositSurface(Vec3 lip, GranularMaterial material, int maxDropBlocks) {
+        BlockPos start = BlockPos.containing(lip.x, lip.y, lip.z);
+        int lipY = start.getY();
+        int minY = Math.max(level.getMinY(), lipY - Math.max(1, maxDropBlocks));
+
+        for (int y = lipY; y >= minY; y--) {
+            BlockPos checkPos = new BlockPos(start.getX(), y, start.getZ());
+            GranularMaterial terrainMaterial = getMaterial(checkPos);
+
+            if (terrainMaterial != GranularMaterial.EMPTY) {
+                return terrainMaterial.id() == material.id()
+                        ? checkPos
+                        : checkPos.above();
+            }
+
+            BlockState state = level.getBlockState(checkPos);
+            if (!state.isAir()) {
+                return checkPos.above();
+            }
+        }
+
+        return null;
     }
 
     @Override
