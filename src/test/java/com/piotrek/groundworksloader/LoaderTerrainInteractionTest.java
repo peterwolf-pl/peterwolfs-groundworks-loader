@@ -43,6 +43,8 @@ class LoaderTerrainInteractionTest {
 
         assertTrue(result.isScooping());
         assertTrue(result.unitsExcavated() > 0);
+        assertTrue(result.unitsExcavated() <= 160,
+                "Swept bucket excavation must be locally bounded per tick, not shave full cell layers");
         assertEquals(result.unitsExcavated(), controller.carriedUnits());
 
         int remainingTerrainUnits = terrain.countTotalWorldUnits();
@@ -72,8 +74,12 @@ class LoaderTerrainInteractionTest {
         assertEquals(0, result.unitsDeposited());
         assertEquals(150, controller.carriedUnits());
 
-        // Now open / dump bucket (+35 deg)
+        // Now open / dump bucket (+35 deg). Give the gravity search a real floor.
         controller.setBucketAngle(35.0F);
+        Vec3 dumpLip = controller.getCuttingEdgePoints(loaderPos, 0.0F, 0.0F).get(2);
+        terrain.createSolidBlock(new BlockPos(
+                (int) Math.floor(dumpLip.x), 63, (int) Math.floor(dumpLip.z)));
+
         BucketTickResult dumpResult = controller.tick(terrain, loaderPos, 0.0F, 0.0F, 0.0F);
 
         assertTrue(dumpResult.isDumping());
@@ -145,11 +151,15 @@ class LoaderTerrainInteractionTest {
         assertEquals(200, initialCarried);
         assertEquals(0, initialTerrain);
 
-        // Raise boom slightly and tilt bucket down into dump position (+40 deg)
-        controller.setBoomAngle(15.0F);
+        // Raise the bucket high enough that depositing at the lip would visibly float.
+        controller.setBoomAngle(45.0F);
         controller.setBucketAngle(40.0F);
 
         Vec3 loaderPos = new Vec3(0.0, 64.0, 0.0);
+        Vec3 dumpLip = controller.getCuttingEdgePoints(loaderPos, 0.0F, 0.0F).get(2);
+        BlockPos floor = new BlockPos(
+                (int) Math.floor(dumpLip.x), 63, (int) Math.floor(dumpLip.z));
+        terrain.createSolidBlock(floor);
 
         BucketTickResult result = controller.tick(terrain, loaderPos, 0.0F, 0.0F, 0.0F);
 
@@ -161,5 +171,11 @@ class LoaderTerrainInteractionTest {
 
         // Volume conservation: initial carried = final carried + final deposited in terrain
         assertEquals(initialCarried, finalCarried + finalTerrain);
+
+        BlockPos expectedSurfaceCell = floor.above();
+        assertNotNull(terrain.getCell(expectedSurfaceCell),
+                "Dump must land on the searched ground surface, not remain at the raised bucket lip");
+        assertTrue(BlockPos.containing(dumpLip).getY() > expectedSurfaceCell.getY(),
+                "Test setup must keep the bucket lip clearly above the receiving surface");
     }
 }
