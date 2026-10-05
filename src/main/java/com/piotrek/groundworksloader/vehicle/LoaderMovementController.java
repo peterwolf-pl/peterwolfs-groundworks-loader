@@ -31,8 +31,10 @@ public class LoaderMovementController {
     public static final float STEER_RECENTER = 3.2F;
 
     public static final float WHEEL_RADIUS_METERS = 0.6875F; // 11 model units
-    public static final double WHEELBASE = 2.0D;              // Distance between front & rear axles
-    public static final double TRACK_GAUGE = 2.125D;          // Width between left & right wheels
+    public static final double FRONT_AXLE_OFFSET = 1.0D;     // Front axle 1.0m ahead of center (Z = +16 units)
+    public static final double REAR_AXLE_OFFSET = 2.0D;      // Rear axle 2.0m behind center (Z = -32 units, shifted back 1 block)
+    public static final double WHEELBASE = 3.0D;             // Extended wheelbase: 3.0 meters total
+    public static final double TRACK_GAUGE = 2.125D;         // Width between left & right wheels
 
     private float forwardSpeed = 0.0F;
     private float steerAngle = 0.0F;
@@ -145,20 +147,19 @@ public class LoaderMovementController {
         double rgtX = Math.cos(yawRad);
         double rgtZ = Math.sin(yawRad);
 
-        double halfL = WHEELBASE * 0.5D;
         double halfW = TRACK_GAUGE * 0.5D;
 
-        double flX = pos.x + (fwdX * halfL) - (rgtX * halfW);
-        double flZ = pos.z + (fwdZ * halfL) - (rgtZ * halfW);
+        double flX = pos.x + (fwdX * FRONT_AXLE_OFFSET) - (rgtX * halfW);
+        double flZ = pos.z + (fwdZ * FRONT_AXLE_OFFSET) - (rgtZ * halfW);
 
-        double frX = pos.x + (fwdX * halfL) + (rgtX * halfW);
-        double frZ = pos.z + (fwdZ * halfL) + (rgtZ * halfW);
+        double frX = pos.x + (fwdX * FRONT_AXLE_OFFSET) + (rgtX * halfW);
+        double frZ = pos.z + (fwdZ * FRONT_AXLE_OFFSET) + (rgtZ * halfW);
 
-        double rlX = pos.x - (fwdX * halfL) - (rgtX * halfW);
-        double rlZ = pos.z - (fwdZ * halfL) - (rgtZ * halfW);
+        double rlX = pos.x - (fwdX * REAR_AXLE_OFFSET) - (rgtX * halfW);
+        double rlZ = pos.z - (fwdZ * REAR_AXLE_OFFSET) - (rgtZ * halfW);
 
-        double rrX = pos.x - (fwdX * halfL) + (rgtX * halfW);
-        double rrZ = pos.z - (fwdZ * halfL) + (rgtZ * halfW);
+        double rrX = pos.x - (fwdX * REAR_AXLE_OFFSET) + (rgtX * halfW);
+        double rrZ = pos.z - (fwdZ * REAR_AXLE_OFFSET) + (rgtZ * halfW);
 
         double flY = sampleGroundHeight(level, flX, pos.y, flZ);
         double frY = sampleGroundHeight(level, frX, pos.y, frZ);
@@ -189,13 +190,12 @@ public class LoaderMovementController {
         double rgtX = Math.cos(yawRad);
         double rgtZ = Math.sin(yawRad);
 
-        double halfL = WHEELBASE * 0.5D;
         double halfW = TRACK_GAUGE * 0.5D;
 
-        double flY = sampleGroundHeight(level, pos.x + (fwdX * halfL) - (rgtX * halfW), pos.y, pos.z + (fwdZ * halfL) - (rgtZ * halfW));
-        double frY = sampleGroundHeight(level, pos.x + (fwdX * halfL) + (rgtX * halfW), pos.y, pos.z + (fwdZ * halfL) + (rgtZ * halfW));
-        double rlY = sampleGroundHeight(level, pos.x - (fwdX * halfL) - (rgtX * halfW), pos.y, pos.z - (fwdZ * halfL) - (rgtZ * halfW));
-        double rrY = sampleGroundHeight(level, pos.x - (fwdX * halfL) + (rgtX * halfW), pos.y, pos.z - (fwdZ * halfL) + (rgtZ * halfW));
+        double flY = sampleGroundHeight(level, pos.x + (fwdX * FRONT_AXLE_OFFSET) - (rgtX * halfW), pos.y, pos.z + (fwdZ * FRONT_AXLE_OFFSET) - (rgtZ * halfW));
+        double frY = sampleGroundHeight(level, pos.x + (fwdX * FRONT_AXLE_OFFSET) + (rgtX * halfW), pos.y, pos.z + (fwdZ * FRONT_AXLE_OFFSET) + (rgtZ * halfW));
+        double rlY = sampleGroundHeight(level, pos.x - (fwdX * REAR_AXLE_OFFSET) - (rgtX * halfW), pos.y, pos.z - (fwdZ * REAR_AXLE_OFFSET) - (rgtZ * halfW));
+        double rrY = sampleGroundHeight(level, pos.x - (fwdX * REAR_AXLE_OFFSET) + (rgtX * halfW), pos.y, pos.z - (fwdZ * REAR_AXLE_OFFSET) + (rgtZ * halfW));
 
         return (flY + frY + rlY + rrY) * 0.25D;
     }
