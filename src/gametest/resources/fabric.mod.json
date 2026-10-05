@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "pw_groundworks_loader_test",
+  "version": "1.0.0",
+  "name": "Loader Groundworks Game Tests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "com.piotrek.groundworksloader.gametest.LoaderGroundworksGameTest"
+    ]
+  },
+  "depends": {
+    "fabric-client-gametest-api-v1": "*"
+  }
+}
