@@ -2,10 +2,8 @@ package com.piotrek.groundworksloader.bucket;
 
 import com.piotrek.groundworks.api.material.GranularMaterial;
 import com.piotrek.groundworks.api.material.GranularMaterialRegistry;
-import com.piotrek.groundworks.terrain.cell.GranularCell;
 import com.piotrek.groundworksloader.integration.groundworks.IGranularTerrainAccess;
 import net.minecraft.core.BlockPos;
-import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -152,29 +150,15 @@ public class LoaderBucketController {
 
                 for (BlockPos target : targets) {
                     if (processed.add(target) && terrain.isDiggable(target)) {
-                        GranularCell cell = terrain.getCell(target);
-                        double surfaceY = target.getY() + 1.0D;
-                        if (cell != null && !cell.isEmpty()) {
-                            int localX = (int) Math.floor((pt.x - target.getX()) * GranularCell.RESOLUTION);
-                            int localZ = (int) Math.floor((pt.z - target.getZ()) * GranularCell.RESOLUTION);
-                            localX = Mth.clamp(localX, 0, GranularCell.RESOLUTION - 1);
-                            localZ = Mth.clamp(localZ, 0, GranularCell.RESOLUTION - 1);
-                            int colH = cell.getColumnHeight(localX, localZ);
-                            if (colH >= 0) {
-                                surfaceY = target.getY() + ((colH + 1) / (double) GranularCell.RESOLUTION);
-                            } else {
-                                surfaceY = target.getY();
-                            }
-                        }
+                        double surfaceY =
+                                terrain.getSurfaceWorldY(target, pt.x, pt.z);
 
                         // Strict physical contact gate: teeth must be AT OR BELOW the surface of the material!
                         // If teeth are visually hovering above the ground, it will NEVER scoop!
                         if (pt.y < surfaceY + 0.05D) {
                             int room = BUCKET_CAPACITY - carriedUnits;
                             if (room > 0) {
-                                GranularCell targetCell = terrain.getOrConvert(target);
-                                int cellMatId = (targetCell != null && !targetCell.isEmpty()) ? targetCell.materialId() : 0;
-
+                                GranularMaterial sourceMaterial = terrain.getMaterial(target);
                                 int toRemove = Math.min(room, 64);
                                 int removed = terrain.excavateMicrovoxelsAbove(target, pt.y, toRemove);
                                 if (removed > 0) {
@@ -183,8 +167,9 @@ public class LoaderBucketController {
                                     affected.add(target);
                                     isScooping = true;
 
-                                    if (carriedMaterial == GranularMaterial.EMPTY && cellMatId != 0) {
-                                        carriedMaterial = GranularMaterialRegistry.byId(cellMatId);
+                                    if (carriedMaterial == GranularMaterial.EMPTY
+                                            && sourceMaterial != GranularMaterial.EMPTY) {
+                                        carriedMaterial = sourceMaterial;
                                     }
                                     if (carriedMaterial == GranularMaterial.EMPTY) {
                                         carriedMaterial = GranularMaterialRegistry.DIRT;
