@@ -45,8 +45,8 @@ def create_loader_textures():
     c_light_red = (220, 30, 20, 255)          # Tail lights
 
     c_dirt = (134, 90, 61, 255)               # Granular soil in bucket
-    c_sand = (219, 207, 153, 255)
-    c_gravel = (128, 126, 124, 255)
+    c_sand = (219, 207, 153, 255)             # Sand
+    c_gravel = (128, 126, 124, 255)           # Gravel stone
 
     # ── Section 1: Massive Tire Rubber Tread (u=0..160, v=0..80) ────
     draw.rectangle([0, 0, 160, 80], fill=c_tire_rubber)
@@ -127,7 +127,7 @@ def create_loader_textures():
     draw.rectangle([454, 0, 500, 40], fill=c_beacon_amber)
     draw.rectangle([462, 8, 492, 32], fill=c_beacon_bright)
 
-    # ── Section 12: Granular Soil inside Bucket (u=0..120, v=234..300)
+    # ── Section 12: Granular Soil / Dirt inside Bucket (u=0..120, v=234..300)
     draw.rectangle([0, 234, 120, 300], fill=c_dirt)
     for x in range(0, 120, 4):
         for y in range(234, 300, 4):
@@ -135,6 +135,24 @@ def create_loader_textures():
                 draw.point((x, y), fill=(160, 110, 80, 255))
             elif (x + y) % 12 == 0:
                 draw.point((x, y), fill=(100, 65, 40, 255))
+
+    # ── Section 13: Granular Sand inside Bucket (u=0..120, v=304..370)
+    draw.rectangle([0, 304, 120, 370], fill=c_sand)
+    for x in range(0, 120, 4):
+        for y in range(304, 370, 4):
+            if (x + y) % 8 == 0:
+                draw.point((x, y), fill=(235, 222, 170, 255))
+            elif (x + y) % 12 == 0:
+                draw.point((x, y), fill=(195, 180, 130, 255))
+
+    # ── Section 14: Granular Gravel / Crushed Stone inside Bucket (u=0..120, v=374..440)
+    draw.rectangle([0, 374, 120, 440], fill=c_gravel)
+    for x in range(0, 120, 4):
+        for y in range(374, 440, 4):
+            if (x + y) % 8 == 0:
+                draw.point((x, y), fill=(155, 152, 150, 255))
+            elif (x + y) % 12 == 0:
+                draw.point((x, y), fill=(100, 98, 96, 255))
 
     # Save entity texture
     out_dir = "src/main/resources/assets/pw_groundworks_loader/textures/entity"
