@@ -131,7 +131,7 @@ public class TestGranularTerrain implements IGranularTerrainAccess {
                     for (int y = 0; y < GranularCell.RESOLUTION; y++) {
                         for (int z = 0; z < GranularCell.RESOLUTION; z++) {
                             for (int x = 0; x < GranularCell.RESOLUTION; x++) {
-                                if (!cell.get(x, y, z)) {
+                                if (!cell.isSet(x, y, z)) {
                                     continue;
                                 }
 
