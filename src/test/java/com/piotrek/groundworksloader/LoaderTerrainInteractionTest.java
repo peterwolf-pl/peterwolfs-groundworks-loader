@@ -54,6 +54,28 @@ class LoaderTerrainInteractionTest {
     }
 
     @Test
+    @DisplayName("Material-aware excavation never removes adjacent foreign material")
+    void testMaterialAwareBoundaryExcavation() {
+        TestGranularTerrain terrain = new TestGranularTerrain();
+        BlockPos dirtPos = new BlockPos(0, 64, 3);
+        BlockPos sandPos = new BlockPos(1, 64, 3);
+        terrain.createFullCell(dirtPos, GranularMaterialRegistry.DIRT);
+        terrain.createFullCell(sandPos, GranularMaterialRegistry.SAND);
+
+        var result = terrain.excavateAt(
+                new Vec3(1.0D, 64.5D, 3.5D),
+                128,
+                GranularMaterialRegistry.DIRT
+        );
+
+        assertTrue(result.success());
+        assertEquals(GranularMaterialRegistry.DIRT.id(), result.material().id());
+        assertTrue(terrain.getCell(dirtPos).unitCount() < 512);
+        assertEquals(512, terrain.getCell(sandPos).unitCount(),
+                "Adjacent sand must remain untouched when dirt is required");
+    }
+
+    @Test
     @DisplayName("Curled bucket retains material without dumping until opened")
     void testCurledBucketDoesNotDump() {
         TestGranularTerrain terrain = new TestGranularTerrain();
