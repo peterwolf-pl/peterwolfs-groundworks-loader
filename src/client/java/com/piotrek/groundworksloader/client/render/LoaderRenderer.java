@@ -82,12 +82,12 @@ public class LoaderRenderer extends EntityRenderer<GroundworksLoaderEntity, Load
 
         this.model.setupAnim(state);
 
-        // Render full model with translucent render type so glass and metal render smoothly
+        // Render full model with cutout render type
         collector.submitModel(
                 this.model,
                 state,
                 stack,
-                RenderTypes.entityTranslucent(TEXTURE),
+                RenderTypes.entityCutout(TEXTURE),
                 state.lightCoords,
                 OverlayTexture.NO_OVERLAY,
                 state.outlineColor
