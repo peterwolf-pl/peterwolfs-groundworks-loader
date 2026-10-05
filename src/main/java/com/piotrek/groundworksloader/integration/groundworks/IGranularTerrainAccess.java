@@ -20,7 +20,19 @@ public interface IGranularTerrainAccess {
     /**
      * Removes only material intersecting the Groundworks world-space excavation brush.
      */
-    ExcavationResult excavateAt(Vec3 worldPoint, int maxUnits);
+    default ExcavationResult excavateAt(Vec3 worldPoint, int maxUnits) {
+        return excavateAt(worldPoint, maxUnits, GranularMaterial.EMPTY);
+    }
+
+    /**
+     * Removes only the requested material. EMPTY means that the terrain API may
+     * select the first material touched by the brush.
+     */
+    ExcavationResult excavateAt(
+            Vec3 worldPoint,
+            int maxUnits,
+            GranularMaterial requiredMaterial
+    );
 
     /**
      * Finds the receiving terrain cell directly below a dumping lip.
