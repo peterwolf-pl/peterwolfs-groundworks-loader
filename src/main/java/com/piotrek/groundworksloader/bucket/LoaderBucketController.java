@@ -27,7 +27,7 @@ public class LoaderBucketController {
     public static final float BUCKET_SPEED = 2.2F;       // Degrees per tick
 
     public static final float DUMP_THRESHOLD_ANGLE = 15.0F; // Tilt angle where material flows out
-    public static final int BUCKET_CAPACITY = 768;          // 1.5 blocks of granular material
+    public static final int BUCKET_CAPACITY = 1664;         // 3.25 blocks of granular material (over 3 full blocks)
     public static final float BUCKET_WIDTH_METERS = 2.8F;
 
     private float boomAngle = 0.0F;
@@ -143,7 +143,7 @@ public class LoaderBucketController {
                             GranularCell cell = terrain.getOrConvert(target);
                             int cellMatId = (cell != null && !cell.isEmpty()) ? cell.materialId() : 0;
 
-                            int toRemove = Math.min(room, 48);
+                            int toRemove = Math.min(room, 64);
                             int removed = terrain.excavateMicrovoxelsAbove(target, pt.y, toRemove);
                             if (removed > 0) {
                                 totalExcavated += removed;
@@ -167,8 +167,8 @@ public class LoaderBucketController {
         // ── 2. Pouring / Dumping (bucket tilted down past threshold) ──
         if (bucketAngle > DUMP_THRESHOLD_ANGLE && carriedUnits > 0 && carriedMaterial != GranularMaterial.EMPTY) {
             float tiltExcess = bucketAngle - DUMP_THRESHOLD_ANGLE;
-            int flowRate = Math.min(carriedUnits, 8 + (int) (tiltExcess * 0.75F));
-            flowRate = Math.min(flowRate, 36);
+            int flowRate = Math.min(carriedUnits, 12 + (int) (tiltExcess * 1.2F));
+            flowRate = Math.min(flowRate, 64);
 
             BlockPos dumpTarget = BlockPos.containing(lipCenter.x, lipCenter.y - 0.25D, lipCenter.z);
             int deposited = terrain.deposit(dumpTarget, carriedMaterial, flowRate);

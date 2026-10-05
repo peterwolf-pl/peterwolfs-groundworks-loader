@@ -404,11 +404,14 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                 PartPose.offset(0.0F, 8.0F, 36.0F)
         );
 
-        // ── Dynamic Carried Granular Material inside Bucket: UV [0, 234] ──
+        // ── Dynamic Carried Granular Material inside Bucket (with Heaped Surcharge): UV [0, 234] ──
         bucket.addOrReplaceChild(
                 "carried_material",
                 CubeListBuilder.create()
-                        .texOffs(0, 234).addBox(-21.0F, -4.0F, 3.0F, 42.0F, 8.0F, 11.0F),
+                        // Base bowl surcharge
+                        .texOffs(0, 234).addBox(-21.5F, -3.0F, 2.0F, 43.0F, 8.0F, 13.0F)
+                        // Heaped mound crown (urobek usypany z czubem ponad krawędź łyżki)
+                        .texOffs(0, 234).addBox(-18.0F, -8.0F, 4.0F, 36.0F, 6.0F, 9.0F),
                 PartPose.offset(0.0F, 0.0F, 0.0F)
         );
 
@@ -443,12 +446,12 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         // Z-Bar bell crank pivots proportionally as bucket tilts
         this.zbarLinkage.xRot = bucketRad * 0.50F;
 
-        // 5. Carried Granular Material Surcharge
+        // 5. Carried Granular Material Surcharge (scales dynamically with fill level)
         if (state.carriedUnits > 0) {
             this.carriedMaterial.visible = true;
             float fill = Math.min(1.0F, state.fillRatio);
-            this.carriedMaterial.yScale = 0.30F + (fill * 0.70F);
-            this.carriedMaterial.zScale = 0.40F + (fill * 0.60F);
+            this.carriedMaterial.yScale = 0.35F + (fill * 0.85F);
+            this.carriedMaterial.zScale = 0.45F + (fill * 0.65F);
         } else {
             this.carriedMaterial.visible = false;
         }

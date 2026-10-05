@@ -3,6 +3,7 @@ package com.piotrek.groundworksloader.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.piotrek.groundworksloader.GroundworksLoaderMod;
+import com.piotrek.groundworksloader.bucket.LoaderBucketController;
 import com.piotrek.groundworksloader.client.GroundworksLoaderClient;
 import com.piotrek.groundworksloader.client.model.LoaderModel;
 import com.piotrek.groundworksloader.entity.GroundworksLoaderEntity;
@@ -50,7 +51,7 @@ public class LoaderRenderer extends EntityRenderer<GroundworksLoaderEntity, Load
 
         state.carriedMaterialId = entity.getCarriedMaterialId();
         state.carriedUnits = entity.getCarriedUnits();
-        state.fillRatio = (float) entity.getCarriedUnits() / 768.0F;
+        state.fillRatio = (float) entity.getCarriedUnits() / (float) LoaderBucketController.BUCKET_CAPACITY;
 
         state.isScooping = entity.isScooping();
         state.isDumping = entity.isDumping();

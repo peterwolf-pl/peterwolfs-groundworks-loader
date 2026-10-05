@@ -1,6 +1,7 @@
 package com.piotrek.groundworksloader.client.render;
 
 import com.piotrek.groundworksloader.GroundworksLoaderMod;
+import com.piotrek.groundworksloader.bucket.LoaderBucketController;
 import com.piotrek.groundworksloader.entity.GroundworksLoaderEntity;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -68,7 +69,7 @@ public class LoaderHudOverlay implements HudElement {
 
         // Carried Material & Fill Bar
         int units = loader.getCarriedUnits();
-        int cap = 768;
+        int cap = LoaderBucketController.BUCKET_CAPACITY;
         String matName = loader.getCarriedMaterialId() > 0 && loader.getCarriedMaterial() != null
                 ? loader.getCarriedMaterial().name().toUpperCase()
                 : "PUSTA";
