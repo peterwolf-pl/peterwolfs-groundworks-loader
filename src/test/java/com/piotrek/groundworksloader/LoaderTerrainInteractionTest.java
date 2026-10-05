@@ -87,7 +87,7 @@ class LoaderTerrainInteractionTest {
         TestGranularTerrain terrain = new TestGranularTerrain();
         LoaderBucketController controller = new LoaderBucketController();
 
-        // Place dirt 1 block below surface level (Y = 63)
+        // Place dirt 1 block below surface level (Y = 63, Z = 3)
         BlockPos belowPos = new BlockPos(0, 63, 3);
         terrain.createFullCell(belowPos, GranularMaterialRegistry.DIRT);
 
@@ -97,12 +97,37 @@ class LoaderTerrainInteractionTest {
         controller.setBoomAngle(-25.0F);
         controller.setBucketAngle(0.0F);
 
-        Vec3 loaderPos = new Vec3(0.0, 64.0, 0.0);
+        // Position loader so cutting edge (teethRelZ = 2.7m) reaches into block Z = 3
+        Vec3 loaderPos = new Vec3(0.0, 64.0, 0.5);
         BucketTickResult result = controller.tick(terrain, loaderPos, 0.0F, 0.0F, 0.15F);
 
         assertTrue(result.isScooping());
         assertTrue(result.unitsExcavated() > 0);
         assertEquals(512, controller.carriedUnits() + terrain.countTotalWorldUnits());
+    }
+
+    @Test
+    @DisplayName("Raised bucket hovering in air does not scoop ground floor material")
+    void testRaisedBoomDoesNotScoopFloor() {
+        TestGranularTerrain terrain = new TestGranularTerrain();
+        LoaderBucketController controller = new LoaderBucketController();
+
+        // Place floor dirt block at Y = 63 (so surface is at 64.0)
+        BlockPos floorPos = new BlockPos(0, 63, 3);
+        terrain.createFullCell(floorPos, GranularMaterialRegistry.DIRT);
+
+        // Raise boom into driving transport position (+15 deg)
+        controller.setBoomAngle(15.0F);
+        controller.setBucketAngle(0.0F);
+
+        Vec3 loaderPos = new Vec3(0.0, 64.0, 0.0);
+        BucketTickResult result = controller.tick(terrain, loaderPos, 0.0F, 0.0F, 0.20F);
+
+        // Bucket is high in the air above Y = 64.0, must NOT scoop or alter floor
+        assertFalse(result.isScooping());
+        assertEquals(0, result.unitsExcavated());
+        assertEquals(0, controller.carriedUnits());
+        assertEquals(512, terrain.countTotalWorldUnits());
     }
 
     @Test

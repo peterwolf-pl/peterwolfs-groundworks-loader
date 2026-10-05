@@ -53,10 +53,12 @@ public class LoaderHudOverlay implements HudElement {
         // Boom Elevation
         float boom = loader.getBoomAngle();
         String boomStatus;
-        if (boom > 25.0F) {
+        if (boom > 20.0F) {
             boomStatus = "§6§lW GÓRZE (Załadunek)";
-        } else if (boom >= -5.0F) {
-            boomStatus = "§a§lPOZIOM GRUNTU";
+        } else if (boom >= 0.0F) {
+            boomStatus = "§a§lJAZDA / TRANSPORT";
+        } else if (boom >= -10.0F) {
+            boomStatus = "§e§lPOZIOM GRUNTU (Skrawanie)";
         } else {
             boomStatus = "§c§lGŁĘBOKIE KOPANIE / RÓW";
         }
