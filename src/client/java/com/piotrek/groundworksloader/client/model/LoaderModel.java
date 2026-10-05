@@ -77,42 +77,42 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         PartDefinition rearChassis = root.addOrReplaceChild(
                 "rear_chassis",
                 CubeListBuilder.create()
-                        // Lower chassis belly frame: UV [264, 0]
-                        .texOffs(264, 0).addBox(-10.0F, 6.0F, -26.0F, 20.0F, 8.0F, 26.0F)
+                        // Lower chassis belly frame: UV [264, 0] (extended back to Z = -42.0F)
+                        .texOffs(264, 0).addBox(-10.0F, 6.0F, -42.0F, 20.0F, 8.0F, 42.0F)
                         // Rear massive cast counterweight with chamfer: UV [264, 0]
-                        .texOffs(264, 0).addBox(-14.0F, 2.0F, -31.0F, 28.0F, 13.0F, 5.0F)
+                        .texOffs(264, 0).addBox(-14.0F, 2.0F, -47.0F, 28.0F, 13.0F, 6.0F)
                         // Towing hitch / lower step: UV [264, 0]
-                        .texOffs(264, 0).addBox(-6.0F, 13.0F, -32.5F, 12.0F, 3.0F, 3.0F)
+                        .texOffs(264, 0).addBox(-6.0F, 13.0F, -48.5F, 12.0F, 3.0F, 3.0F)
                         // Recessed tail lights: UV [264, 0]
-                        .texOffs(264, 0).addBox(-12.0F, 4.0F, -31.5F, 5.0F, 3.0F, 1.0F)
-                        .texOffs(264, 0).addBox(7.0F, 4.0F, -31.5F, 5.0F, 3.0F, 1.0F)
+                        .texOffs(264, 0).addBox(-12.0F, 4.0F, -47.5F, 5.0F, 3.0F, 1.0F)
+                        .texOffs(264, 0).addBox(7.0F, 4.0F, -47.5F, 5.0F, 3.0F, 1.0F)
 
-                        // ── Main Engine Hood & Compartment (Industrial Yellow): UV [0, 84] ──
-                        .texOffs(0, 84).addBox(-11.0F, -6.0F, -25.0F, 22.0F, 12.0F, 21.0F)
+                        // ── Main Extended Engine Hood & Compartment (Industrial Yellow): UV [0, 84] ──
+                        .texOffs(0, 84).addBox(-11.0F, -6.0F, -41.0F, 22.0F, 12.0F, 37.0F)
                         // Sloped upper engine cover: UV [0, 84]
-                        .texOffs(0, 84).addBox(-9.5F, -11.0F, -23.0F, 19.0F, 5.0F, 18.0F)
+                        .texOffs(0, 84).addBox(-9.5F, -11.0F, -39.0F, 19.0F, 5.0F, 34.0F)
                         // Rear radiator cooling grille: UV [184, 84]
-                        .texOffs(184, 84).addBox(-8.0F, -4.0F, -25.5F, 16.0F, 9.0F, 1.0F)
+                        .texOffs(184, 84).addBox(-8.0F, -4.0F, -41.5F, 16.0F, 9.0F, 1.0F)
                         // Side ventilation louvers: UV [184, 84]
-                        .texOffs(184, 84).addBox(-11.5F, -4.0F, -20.0F, 1.0F, 8.0F, 14.0F)
-                        .texOffs(184, 84).addBox(10.5F, -4.0F, -20.0F, 1.0F, 8.0F, 14.0F)
+                        .texOffs(184, 84).addBox(-11.5F, -4.0F, -36.0F, 1.0F, 8.0F, 30.0F)
+                        .texOffs(184, 84).addBox(10.5F, -4.0F, -36.0F, 1.0F, 8.0F, 30.0F)
 
                         // ── Exhaust Stack & Cyclone Air Pre-Cleaner: UV [364, 164] ──
                         // Vertical exhaust stack pipe with rain flapper cap
-                        .texOffs(364, 164).addBox(6.0F, -23.0F, -9.0F, 2.5F, 13.0F, 2.5F)
-                        .texOffs(364, 164).addBox(5.5F, -24.5F, -9.5F, 3.5F, 2.0F, 3.5F)
+                        .texOffs(364, 164).addBox(6.0F, -23.0F, -16.0F, 2.5F, 13.0F, 2.5F)
+                        .texOffs(364, 164).addBox(5.5F, -24.5F, -16.5F, 3.5F, 2.0F, 3.5F)
                         // Cyclone air cleaner canister
-                        .texOffs(364, 164).addBox(-8.5F, -17.0F, -11.0F, 4.0F, 7.0F, 4.0F)
+                        .texOffs(364, 164).addBox(-8.5F, -17.0F, -18.0F, 4.0F, 7.0F, 4.0F)
 
-                        // ── Rear Wheel Mudguards / Fenders (Raised by 1/4 block): UV [0, 84] ──
+                        // ── Rear Wheel Mudguards / Fenders (Centered over rear axle at Z = -32.0F): UV [0, 84] ──
                         // Left rear mudguard & flares
-                        .texOffs(0, 84).addBox(-22.0F, -3.0F, -26.0F, 11.0F, 2.0F, 20.0F)
-                        .texOffs(0, 84).addBox(-22.0F, -1.0F, -26.0F, 11.0F, 6.0F, 2.0F)
-                        .texOffs(0, 84).addBox(-22.0F, -1.0F, -8.0F, 11.0F, 6.0F, 2.0F)
+                        .texOffs(0, 84).addBox(-22.0F, -3.0F, -42.0F, 11.0F, 2.0F, 20.0F)
+                        .texOffs(0, 84).addBox(-22.0F, -1.0F, -42.0F, 11.0F, 6.0F, 2.0F)
+                        .texOffs(0, 84).addBox(-22.0F, -1.0F, -24.0F, 11.0F, 6.0F, 2.0F)
                         // Right rear mudguard & flares
-                        .texOffs(0, 84).addBox(11.0F, -3.0F, -26.0F, 11.0F, 2.0F, 20.0F)
-                        .texOffs(0, 84).addBox(11.0F, -1.0F, -26.0F, 11.0F, 6.0F, 2.0F)
-                        .texOffs(0, 84).addBox(11.0F, -1.0F, -8.0F, 11.0F, 6.0F, 2.0F),
+                        .texOffs(0, 84).addBox(11.0F, -3.0F, -42.0F, 11.0F, 2.0F, 20.0F)
+                        .texOffs(0, 84).addBox(11.0F, -1.0F, -42.0F, 11.0F, 6.0F, 2.0F)
+                        .texOffs(0, 84).addBox(11.0F, -1.0F, -24.0F, 11.0F, 6.0F, 2.0F),
                 PartPose.offset(0.0F, 0.0F, 0.0F)
         );
 
@@ -136,7 +136,7 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                         .texOffs(164, 0).addBox(-6.5F, -5.0F, -2.0F, 2.0F, 10.0F, 4.0F)
                         .texOffs(164, 0).addBox(-6.5F, -2.0F, -5.0F, 2.0F, 4.0F, 10.0F)
                         .texOffs(164, 0).addBox(-7.0F, -2.0F, -2.0F, 1.0F, 4.0F, 4.0F),
-                PartPose.offset(-17.0F, 13.0F, -16.0F)
+                PartPose.offset(-17.0F, 13.0F, -32.0F)
         );
 
         // ── Rear Right Wheel ──
@@ -156,7 +156,7 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                         .texOffs(164, 0).addBox(4.5F, -5.0F, -2.0F, 2.0F, 10.0F, 4.0F)
                         .texOffs(164, 0).addBox(4.5F, -2.0F, -5.0F, 2.0F, 4.0F, 10.0F)
                         .texOffs(164, 0).addBox(6.0F, -2.0F, -2.0F, 1.0F, 4.0F, 4.0F),
-                PartPose.offset(17.0F, 13.0F, -16.0F)
+                PartPose.offset(17.0F, 13.0F, -32.0F)
         );
 
         // ── ROPS/FOPS Operator Safety Cabin ──

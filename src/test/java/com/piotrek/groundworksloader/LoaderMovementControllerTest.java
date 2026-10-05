@@ -82,9 +82,9 @@ class LoaderMovementControllerTest {
         double rearY = 64.0D;
         double expectedTargetPitch = Math.toDegrees(Math.atan2(rearY - frontY, LoaderMovementController.WHEELBASE));
 
-        // Expected pitch is negative (-26.56 deg), tilting the front axle up
-        assertTrue(expectedTargetPitch < -20.0D);
-        assertTrue(expectedTargetPitch > -30.0D);
+        // Expected pitch is negative (-18.43 deg with 3.0m wheelbase), tilting the front axle up
+        assertTrue(expectedTargetPitch < -15.0D);
+        assertTrue(expectedTargetPitch > -25.0D);
 
         controller.setOrientation((float) expectedTargetPitch, 0.0F);
         assertEquals((float) expectedTargetPitch, controller.vehiclePitch(), 1e-4F);
