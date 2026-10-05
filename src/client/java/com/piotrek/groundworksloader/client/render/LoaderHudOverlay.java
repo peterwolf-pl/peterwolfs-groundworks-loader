@@ -66,7 +66,16 @@ public class LoaderHudOverlay implements HudElement {
 
         // Bucket Tilt
         float bucket = loader.getBucketAngle();
-        String bucketStatus = bucket > 15.0F ? "§c§lOTWARTA (Wysyp)" : (bucket < -10.0F ? "§a§lZAMKNIĘTA" : "§ePOZIOMO");
+        String bucketStatus;
+        if (bucket > 45.0F) {
+            bucketStatus = "§c§lPEŁNY WYWROT (Wysyp)";
+        } else if (bucket > 15.0F) {
+            bucketStatus = "§6§lOTWARTA";
+        } else if (bucket < -15.0F) {
+            bucketStatus = "§a§lZAMKNIĘTA (Transport)";
+        } else {
+            bucketStatus = "§ePOZIOMO";
+        }
         extractor.text(font, String.format("Łyżka [←/→]: §f%.1f° §7(%s§7)", bucket, bucketStatus), x, y + 33, 0xFFFFFF, true);
 
         // Carried Material & Fill Bar
