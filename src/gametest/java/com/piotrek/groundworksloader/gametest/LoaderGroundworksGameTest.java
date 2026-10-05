@@ -63,15 +63,15 @@ public final class LoaderGroundworksGameTest implements FabricClientGameTest {
 
         Vec3 currentLip = bucket.getCuttingEdgePoints(
                 currentVehicle, 0.0F, 0.0F).get(2);
-        BlockPos contactCell = BlockPos.containing(
-                currentLip.x, currentLip.y - 0.10D, currentLip.z).below();
 
-        // The exact candidate may be the direct or below cell depending on the
-        // cutting edge's fractional Y. Query the known floor cell at Z=3.
-        BlockPos floorCell = new BlockPos(
-                (int) Math.floor(currentLip.x), BASE_Y - 1, 3);
-        double before = GroundworksApi.getSurfaceWorldY(
-                level, floorCell, currentLip.x, currentLip.z);
+        // Measure the whole working strip, not one exact X/Z column. A spherical
+        // world-space brush can legitimately remove nearby microvoxels while the
+        // top voxel in one sampled column remains unchanged.
+        int terrainUnitsBefore = 0;
+        for (int x = -2; x <= 1; x++) {
+            terrainUnitsBefore += effectiveGranularUnits(
+                    level, new BlockPos(x, BASE_Y - 1, 3));
+        }
 
         var scoop = bucket.tick(
                 GroundworksLoaderAdapter.of(level),
@@ -94,12 +94,28 @@ public final class LoaderGroundworksGameTest implements FabricClientGameTest {
             throw new AssertionError("Excavated units must be conserved in the loader bucket");
         }
 
-        double after = GroundworksApi.getSurfaceWorldY(
-                level, floorCell, currentLip.x, currentLip.z);
-        if (!(after < before)) {
+        int terrainUnitsAfter = 0;
+        for (int x = -2; x <= 1; x++) {
+            terrainUnitsAfter += effectiveGranularUnits(
+                    level, new BlockPos(x, BASE_Y - 1, 3));
+        }
+
+        int removedFromTerrain = terrainUnitsBefore - terrainUnitsAfter;
+        if (removedFromTerrain != scoop.unitsExcavated()) {
             throw new AssertionError(
-                    "Groundworks surface should be locally cut by the swept bucket: before="
-                            + before + ", after=" + after);
+                    "Real Groundworks terrain volume must decrease exactly by loader intake: "
+                            + "terrainRemoved=" + removedFromTerrain
+                            + ", bucketIntake=" + scoop.unitsExcavated());
+        }
+
+        long affectedColumns = scoop.affectedPositions().stream()
+                .map(BlockPos::getX)
+                .distinct()
+                .count();
+        if (affectedColumns < 2) {
+            throw new AssertionError(
+                    "Swept bucket should distribute excavation across multiple cutting-edge columns; "
+                            + "affected=" + scoop.affectedPositions());
         }
 
         // Now verify the Excavator-style gravity surface search using real world
@@ -144,5 +160,15 @@ public final class LoaderGroundworksGameTest implements FabricClientGameTest {
             throw new AssertionError(
                     "GameTest setup must keep the lip well above the receiving surface");
         }
+    }
+
+    private static int effectiveGranularUnits(ServerLevel level, BlockPos pos) {
+        var cell = GroundworksApi.queryCell(level, pos);
+        if (cell != null) {
+            return cell.unitCount();
+        }
+
+        GranularMaterial material = GroundworksApi.getMaterial(level, pos);
+        return material != null && material != GranularMaterial.EMPTY ? 512 : 0;
     }
 }
