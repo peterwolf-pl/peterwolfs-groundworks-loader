@@ -22,9 +22,9 @@ public class LoaderBucketController {
     public static final float MAX_BOOM_ANGLE = 55.0F;  // High loading dump position
     public static final float BOOM_SPEED = 2.0F;       // Smooth hydraulic travel per tick
 
-    public static final float MIN_BUCKET_ANGLE = -35.0F; // Closed / curled up (transport / retention)
-    public static final float MAX_BUCKET_ANGLE = 60.0F;  // Fully opened / dumped down
-    public static final float BUCKET_SPEED = 2.2F;       // Degrees per tick
+    public static final float MIN_BUCKET_ANGLE = -40.0F; // Closed / curled up (transport / retention)
+    public static final float MAX_BUCKET_ANGLE = 90.0F;  // Fully opened / dumped down (steep discharge angle)
+    public static final float BUCKET_SPEED = 2.8F;       // Fast hydraulic tilt speed
 
     public static final float DUMP_THRESHOLD_ANGLE = 15.0F; // Tilt angle where material flows out
     public static final int BUCKET_CAPACITY = 1664;         // 3.25 blocks of granular material (over 3 full blocks)
@@ -200,8 +200,8 @@ public class LoaderBucketController {
         // ── 2. Pouring / Dumping (bucket tilted down past threshold) ──
         if (bucketAngle > DUMP_THRESHOLD_ANGLE && carriedUnits > 0 && carriedMaterial != GranularMaterial.EMPTY) {
             float tiltExcess = bucketAngle - DUMP_THRESHOLD_ANGLE;
-            int flowRate = Math.min(carriedUnits, 12 + (int) (tiltExcess * 1.2F));
-            flowRate = Math.min(flowRate, 64);
+            int flowRate = Math.min(carriedUnits, 16 + (int) (tiltExcess * 1.5F));
+            flowRate = Math.min(flowRate, 96);
 
             BlockPos dumpTarget = BlockPos.containing(lipCenter.x, lipCenter.y - 0.25D, lipCenter.z);
             int deposited = terrain.deposit(dumpTarget, carriedMaterial, flowRate);
