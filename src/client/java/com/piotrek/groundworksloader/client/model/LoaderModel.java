@@ -104,15 +104,15 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                         // Cyclone air cleaner canister
                         .texOffs(364, 164).addBox(-8.5F, -17.0F, -11.0F, 4.0F, 7.0F, 4.0F)
 
-                        // ── Rear Wheel Mudguards / Fenders: UV [0, 84] ──
+                        // ── Rear Wheel Mudguards / Fenders (Raised by 1/4 block): UV [0, 84] ──
                         // Left rear mudguard & flares
-                        .texOffs(0, 84).addBox(-22.0F, 1.0F, -26.0F, 11.0F, 2.0F, 20.0F)
-                        .texOffs(0, 84).addBox(-22.0F, 3.0F, -26.0F, 11.0F, 5.0F, 2.0F)
-                        .texOffs(0, 84).addBox(-22.0F, 3.0F, -8.0F, 11.0F, 5.0F, 2.0F)
+                        .texOffs(0, 84).addBox(-22.0F, -3.0F, -26.0F, 11.0F, 2.0F, 20.0F)
+                        .texOffs(0, 84).addBox(-22.0F, -1.0F, -26.0F, 11.0F, 6.0F, 2.0F)
+                        .texOffs(0, 84).addBox(-22.0F, -1.0F, -8.0F, 11.0F, 6.0F, 2.0F)
                         // Right rear mudguard & flares
-                        .texOffs(0, 84).addBox(11.0F, 1.0F, -26.0F, 11.0F, 2.0F, 20.0F)
-                        .texOffs(0, 84).addBox(11.0F, 3.0F, -26.0F, 11.0F, 5.0F, 2.0F)
-                        .texOffs(0, 84).addBox(11.0F, 3.0F, -8.0F, 11.0F, 5.0F, 2.0F),
+                        .texOffs(0, 84).addBox(11.0F, -3.0F, -26.0F, 11.0F, 2.0F, 20.0F)
+                        .texOffs(0, 84).addBox(11.0F, -1.0F, -26.0F, 11.0F, 6.0F, 2.0F)
+                        .texOffs(0, 84).addBox(11.0F, -1.0F, -8.0F, 11.0F, 6.0F, 2.0F),
                 PartPose.offset(0.0F, 0.0F, 0.0F)
         );
 
@@ -233,15 +233,15 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                         .texOffs(364, 84).addBox(-12.0F, 8.0F, -1.0F, 3.0F, 3.0F, 6.0F)
                         .texOffs(364, 84).addBox(9.0F, 8.0F, -1.0F, 3.0F, 3.0F, 6.0F)
 
-                        // ── Front Wheel Mudguards / Fenders: UV [0, 84] ──
+                        // ── Front Wheel Mudguards / Fenders (Raised by 1/4 block): UV [0, 84] ──
                         // Left front mudguard
-                        .texOffs(0, 84).addBox(-22.0F, 1.0F, 6.0F, 11.0F, 2.0F, 20.0F)
-                        .texOffs(0, 84).addBox(-22.0F, 3.0F, 6.0F, 11.0F, 5.0F, 2.0F)
-                        .texOffs(0, 84).addBox(-22.0F, 3.0F, 24.0F, 11.0F, 5.0F, 2.0F)
+                        .texOffs(0, 84).addBox(-22.0F, -3.0F, 6.0F, 11.0F, 2.0F, 20.0F)
+                        .texOffs(0, 84).addBox(-22.0F, -1.0F, 6.0F, 11.0F, 6.0F, 2.0F)
+                        .texOffs(0, 84).addBox(-22.0F, -1.0F, 24.0F, 11.0F, 6.0F, 2.0F)
                         // Right front mudguard
-                        .texOffs(0, 84).addBox(11.0F, 1.0F, 6.0F, 11.0F, 2.0F, 20.0F)
-                        .texOffs(0, 84).addBox(11.0F, 3.0F, 6.0F, 11.0F, 5.0F, 2.0F)
-                        .texOffs(0, 84).addBox(11.0F, 3.0F, 24.0F, 11.0F, 5.0F, 2.0F)
+                        .texOffs(0, 84).addBox(11.0F, -3.0F, 6.0F, 11.0F, 2.0F, 20.0F)
+                        .texOffs(0, 84).addBox(11.0F, -1.0F, 6.0F, 11.0F, 6.0F, 2.0F)
+                        .texOffs(0, 84).addBox(11.0F, -1.0F, 24.0F, 11.0F, 6.0F, 2.0F)
 
                         // ── Boom Pivot Towers & LED Work Headlights: UV [0, 84] & [364, 164] ──
                         .texOffs(0, 84).addBox(-10.0F, -7.0F, 4.0F, 4.0F, 15.0F, 8.0F)
@@ -403,8 +403,8 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         float steerRad = (float) Math.toRadians(state.steerAngle);
         this.frontChassis.yRot = steerRad;
 
-        // 2. Rolling Wheel Animation (degrees)
-        float wheelRad = (float) Math.toRadians(state.wheelRotation);
+        // 2. Rolling Wheel Animation (degrees, inverted to roll forward)
+        float wheelRad = (float) Math.toRadians(-state.wheelRotation);
         this.rearLeftWheel.xRot = wheelRad;
         this.rearRightWheel.xRot = wheelRad;
         this.frontLeftWheel.xRot = wheelRad;
