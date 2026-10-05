@@ -352,34 +352,43 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         );
 
         // ══════════════════════════════════════════════════════════════════════
-        // 4. HEAVY EXCAVATION SCOOP BUCKET (Łyżka ładowarki)
+        // 4. HEAVY EXCAVATION SCOOP BUCKET (Łyżka ładowarki — otwarta pusta misa)
         // ══════════════════════════════════════════════════════════════════════
         PartDefinition bucket = liftArms.addOrReplaceChild(
                 "bucket",
                 CubeListBuilder.create()
-                        // Main curved scoop shell (3.0m wide): UV [184, 174]
-                        .texOffs(184, 174).addBox(-23.0F, -8.0F, 0.0F, 46.0F, 14.0F, 14.0F)
-                        // Bottom wear floor plate: UV [184, 174]
-                        .texOffs(184, 174).addBox(-23.0F, 4.0F, 2.0F, 46.0F, 2.0F, 14.0F)
-                        // Hardened wear cutting lip edge: UV [184, 174]
-                        .texOffs(184, 174).addBox(-23.5F, 4.5F, 15.0F, 47.0F, 2.5F, 4.0F)
+                        // ── 1. Tylna ściana misy (Back curved wall): grubość 2.5px, wysokość 15px ──
+                        .texOffs(184, 174).addBox(-22.0F, -8.0F, 0.0F, 44.0F, 12.0F, 2.5F)
+                        // Skośne przejście dna do ściany tylnej (Curved heel transition)
+                        .texOffs(184, 174).addBox(-22.0F, 4.0F, 1.0F, 44.0F, 2.0F, 4.0F)
 
-                        // ── 6 Heavy Forged Excavation Teeth (Zęby łyżki): UV [184, 174] ──
-                        .texOffs(184, 174).addBox(-20.0F, 4.5F, 19.0F, 3.0F, 2.0F, 4.0F)
-                        .texOffs(184, 174).addBox(-12.0F, 4.5F, 19.0F, 3.0F, 2.0F, 4.0F)
-                        .texOffs(184, 174).addBox(-4.0F, 4.5F, 19.0F, 3.0F, 2.0F, 4.0F)
-                        .texOffs(184, 174).addBox(4.0F, 4.5F, 19.0F, 3.0F, 2.0F, 4.0F)
-                        .texOffs(184, 174).addBox(12.0F, 4.5F, 19.0F, 3.0F, 2.0F, 4.0F)
-                        .texOffs(184, 174).addBox(20.0F, 4.5F, 19.0F, 3.0F, 2.0F, 4.0F)
+                        // ── 2. Dno misy łyżki (Flat floor wear plate): grubość 2px, długość 13px (Z=5..18) ──
+                        .texOffs(184, 174).addBox(-22.0F, 4.5F, 5.0F, 44.0F, 2.0F, 13.0F)
 
-                        // ── Side Cheek Plates with Side Cutters ──
-                        .texOffs(184, 174).addBox(-23.5F, -10.0F, 0.0F, 1.5F, 16.0F, 16.0F)
-                        .texOffs(184, 174).addBox(22.0F, -10.0F, 0.0F, 1.5F, 16.0F, 16.0F)
+                        // ── 3. Hartowana krawędź tnąca / lemiesz czołowy (Cutting lip): grubość 2.5px (Z=18..22) ──
+                        .texOffs(184, 174).addBox(-23.0F, 4.5F, 18.0F, 46.0F, 2.0F, 4.0F)
 
-                        // ── Top Spill / Rock Shield Visor ──
-                        .texOffs(184, 174).addBox(-23.0F, -11.0F, -2.0F, 46.0F, 3.0F, 4.0F)
-                        // Top central dog-bone mount horn
-                        .texOffs(184, 174).addBox(-2.0F, -12.0F, 2.0F, 4.0F, 5.0F, 4.0F),
+                        // ── 4. 6 kutych zębów skalnych (Forged rock teeth): UV [184, 174] ──
+                        .texOffs(184, 174).addBox(-20.0F, 4.0F, 22.0F, 3.0F, 2.5F, 5.0F)
+                        .texOffs(184, 174).addBox(-12.0F, 4.0F, 22.0F, 3.0F, 2.5F, 5.0F)
+                        .texOffs(184, 174).addBox(-4.0F, 4.0F, 22.0F, 3.0F, 2.5F, 5.0F)
+                        .texOffs(184, 174).addBox(4.0F, 4.0F, 22.0F, 3.0F, 2.5F, 5.0F)
+                        .texOffs(184, 174).addBox(12.0F, 4.0F, 22.0F, 3.0F, 2.5F, 5.0F)
+                        .texOffs(184, 174).addBox(20.0F, 4.0F, 22.0F, 3.0F, 2.5F, 5.0F)
+
+                        // ── 5. Lewa ściana boczna (Left side cheek & cutter): cienka płyta 1.5px ──
+                        .texOffs(184, 174).addBox(-23.5F, -9.0F, 0.0F, 1.5F, 15.5F, 20.0F)
+                        // Boczny nóż ścinający (side cutter)
+                        .texOffs(184, 174).addBox(-24.0F, 1.0F, 16.0F, 1.0F, 5.5F, 5.0F)
+
+                        // ── 6. Prawa ściana boczna (Right side cheek & cutter): cienka płyta 1.5px ──
+                        .texOffs(184, 174).addBox(22.0F, -9.0F, 0.0F, 1.5F, 15.5F, 20.0F)
+                        .texOffs(184, 174).addBox(23.0F, 1.0F, 16.0F, 1.0F, 5.5F, 5.0F)
+
+                        // ── 7. Daszek ochronny przeciw wysypywaniu urobku w tył (Top spill rock guard) ──
+                        .texOffs(184, 174).addBox(-22.0F, -11.0F, -2.0F, 44.0F, 3.0F, 4.0F)
+                        // Centralne ucho montażu siłownika Z-Bar
+                        .texOffs(184, 174).addBox(-2.0F, -12.0F, 1.0F, 4.0F, 5.0F, 4.0F),
                 PartPose.offset(0.0F, 19.5F, 34.0F)
         );
 
@@ -387,10 +396,10 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         bucket.addOrReplaceChild(
                 "carried_material",
                 CubeListBuilder.create()
-                        // Base bowl surcharge
-                        .texOffs(0, 234).addBox(-21.5F, -3.0F, 2.0F, 43.0F, 8.0F, 13.0F)
-                        // Heaped mound crown (urobek usypany z czubem ponad krawędź łyżki)
-                        .texOffs(0, 234).addBox(-18.0F, -8.0F, 4.0F, 36.0F, 6.0F, 9.0F),
+                        // Wypełnienie niecki łyżki (tylko gdy wieziemy urobek)
+                        .texOffs(0, 234).addBox(-21.5F, 0.0F, 3.0F, 43.0F, 4.5F, 16.0F)
+                        // Stożek czuba urobku spiętrzony ponad krawędź
+                        .texOffs(0, 234).addBox(-18.0F, -5.0F, 5.0F, 36.0F, 5.0F, 12.0F),
                 PartPose.offset(0.0F, 0.0F, 0.0F)
         );
 
