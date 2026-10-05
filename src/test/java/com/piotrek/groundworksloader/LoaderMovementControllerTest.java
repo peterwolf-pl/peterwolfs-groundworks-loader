@@ -70,4 +70,23 @@ class LoaderMovementControllerTest {
         controller.step(1.0F, 0.0F);
         assertTrue(controller.wheelRotation() > 0.0F);
     }
+
+    @Test
+    @DisplayName("Two-axle terrain pitch angles nose up when front axle climbs elevation")
+    void testTwoAxlePitchOrientation() {
+        LoaderMovementController controller = new LoaderMovementController();
+        assertEquals(0.0F, controller.vehiclePitch());
+
+        // Front axle at Y = 65.0, rear axle at Y = 64.0 (1 block elevation on front wheels)
+        double frontY = 65.0D;
+        double rearY = 64.0D;
+        double expectedTargetPitch = Math.toDegrees(Math.atan2(rearY - frontY, LoaderMovementController.WHEELBASE));
+
+        // Expected pitch is negative (-26.56 deg), tilting the front axle up
+        assertTrue(expectedTargetPitch < -20.0D);
+        assertTrue(expectedTargetPitch > -30.0D);
+
+        controller.setOrientation((float) expectedTargetPitch, 0.0F);
+        assertEquals((float) expectedTargetPitch, controller.vehiclePitch(), 1e-4F);
+    }
 }
