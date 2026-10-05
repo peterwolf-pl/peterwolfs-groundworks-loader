@@ -73,21 +73,35 @@ public class LoaderBucketController {
         float yawRad = (float) Math.toRadians(vehicleYaw);
         float pitchRad = (float) Math.toRadians(vehiclePitch);
 
-        // Boom arm rest geometry (boomerang bent arm reaching deep below grade)
-        float armAngleRad = (float) Math.toRadians(boomAngle - 20.0F);
-        float armLength = 2.25F;
-        float armPivotY = 1.25F;
-        float armPivotZ = 0.50F;
+        // 1:1 match with LoaderModel 3D kinematics:
+        // liftArms.xRot = toRadians(boomAngle)
+        // bucket.xRot = toRadians(-bucketAngle)
+        float boomRad = (float) Math.toRadians(boomAngle);
+        float bucketRad = (float) Math.toRadians(-bucketAngle);
 
-        // Bucket pivot relative to vehicle base (including downward knee bend)
-        float bPivotY = armPivotY + ((float) Math.sin(armAngleRad) * armLength) - 0.50F;
-        float bPivotZ = armPivotZ + ((float) Math.cos(armAngleRad) * armLength);
+        // 1. Arm pivot in vehicle coordinates (meters above ground contact)
+        double armPivotY = 1.8125D;
+        double armPivotZ = 0.50D;
 
-        // Bucket lip relative to bucket pivot
-        float totalTiltRad = (float) Math.toRadians(bucketAngle);
-        float bucketLength = 0.95F;
-        float lipRelY = bPivotY - ((float) Math.sin(totalTiltRad) * bucketLength * 0.4F);
-        float lipRelZ = bPivotZ + ((float) Math.cos(totalTiltRad) * bucketLength);
+        // 2. Bucket pivot relative to arm pivot
+        double bRelY = -1.21875D;
+        double bRelZ = 2.125D;
+
+        double cosB = Math.cos(boomRad);
+        double sinB = Math.sin(boomRad);
+        double bucketPivotY = armPivotY + (bRelY * cosB + bRelZ * sinB);
+        double bucketPivotZ = armPivotZ + (-bRelY * sinB + bRelZ * cosB);
+
+        // 3. Teeth relative to bucket pivot
+        double tRelY = -0.28125D;
+        double tRelZ = 1.00D;
+
+        double totalRad = boomRad + bucketRad;
+        double cosT = Math.cos(totalRad);
+        double sinT = Math.sin(totalRad);
+
+        double lipRelY = bucketPivotY + (tRelY * cosT + tRelZ * sinT);
+        double lipRelZ = bucketPivotZ + (-tRelY * sinT + tRelZ * cosT);
 
         List<Vec3> points = new ArrayList<>(5);
         float halfW = BUCKET_WIDTH_METERS * 0.5F;
@@ -130,7 +144,7 @@ public class LoaderBucketController {
         boolean isDumping = false;
 
         // ── 1. Scooping / Digging (driving forward into ground with lowered bucket) ──
-        if (forwardSpeed > 0.01F && boomAngle < 15.0F && bucketAngle < 20.0F) {
+        if (forwardSpeed > 0.01F && bucketAngle < 20.0F) {
             Set<BlockPos> processed = new HashSet<>();
             for (Vec3 pt : edgePoints) {
                 BlockPos pos = BlockPos.containing(pt.x, pt.y, pt.z);
@@ -138,24 +152,43 @@ public class LoaderBucketController {
 
                 for (BlockPos target : targets) {
                     if (processed.add(target) && terrain.isDiggable(target)) {
-                        int room = BUCKET_CAPACITY - carriedUnits;
-                        if (room > 0) {
-                            GranularCell cell = terrain.getOrConvert(target);
-                            int cellMatId = (cell != null && !cell.isEmpty()) ? cell.materialId() : 0;
+                        GranularCell cell = terrain.getCell(target);
+                        double surfaceY = target.getY() + 1.0D;
+                        if (cell != null && !cell.isEmpty()) {
+                            int localX = (int) Math.floor((pt.x - target.getX()) * GranularCell.RESOLUTION);
+                            int localZ = (int) Math.floor((pt.z - target.getZ()) * GranularCell.RESOLUTION);
+                            localX = Mth.clamp(localX, 0, GranularCell.RESOLUTION - 1);
+                            localZ = Mth.clamp(localZ, 0, GranularCell.RESOLUTION - 1);
+                            int colH = cell.getColumnHeight(localX, localZ);
+                            if (colH >= 0) {
+                                surfaceY = target.getY() + ((colH + 1) / (double) GranularCell.RESOLUTION);
+                            } else {
+                                surfaceY = target.getY();
+                            }
+                        }
 
-                            int toRemove = Math.min(room, 64);
-                            int removed = terrain.excavateMicrovoxelsAbove(target, pt.y, toRemove);
-                            if (removed > 0) {
-                                totalExcavated += removed;
-                                carriedUnits += removed;
-                                affected.add(target);
-                                isScooping = true;
+                        // Strict physical contact gate: teeth must be AT OR BELOW the surface of the material!
+                        // If teeth are visually hovering above the ground, it will NEVER scoop!
+                        if (pt.y < surfaceY + 0.05D) {
+                            int room = BUCKET_CAPACITY - carriedUnits;
+                            if (room > 0) {
+                                GranularCell targetCell = terrain.getOrConvert(target);
+                                int cellMatId = (targetCell != null && !targetCell.isEmpty()) ? targetCell.materialId() : 0;
 
-                                if (carriedMaterial == GranularMaterial.EMPTY && cellMatId != 0) {
-                                    carriedMaterial = GranularMaterialRegistry.byId(cellMatId);
-                                }
-                                if (carriedMaterial == GranularMaterial.EMPTY) {
-                                    carriedMaterial = GranularMaterialRegistry.DIRT;
+                                int toRemove = Math.min(room, 64);
+                                int removed = terrain.excavateMicrovoxelsAbove(target, pt.y, toRemove);
+                                if (removed > 0) {
+                                    totalExcavated += removed;
+                                    carriedUnits += removed;
+                                    affected.add(target);
+                                    isScooping = true;
+
+                                    if (carriedMaterial == GranularMaterial.EMPTY && cellMatId != 0) {
+                                        carriedMaterial = GranularMaterialRegistry.byId(cellMatId);
+                                    }
+                                    if (carriedMaterial == GranularMaterial.EMPTY) {
+                                        carriedMaterial = GranularMaterialRegistry.DIRT;
+                                    }
                                 }
                             }
                         }
