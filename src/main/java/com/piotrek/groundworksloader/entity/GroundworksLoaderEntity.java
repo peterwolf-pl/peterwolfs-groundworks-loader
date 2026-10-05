@@ -168,12 +168,35 @@ public class GroundworksLoaderEntity extends Entity {
             this.setYBodyRot(this.getYRot());
         }
 
+        // Update 2-axle terrain suspension orientation (pitch & roll)
+        this.movementController.updateTerrainOrientation(
+                serverLevel,
+                this.position(),
+                this.getYRot()
+        );
+
+        double targetGroundY = this.movementController.getAverageGroundY(
+                serverLevel,
+                this.position(),
+                this.getYRot()
+        );
+
         // Compute translation
         float currentSpeed = moveRes.forwardSpeed();
         float yawRad = (float) Math.toRadians(this.getYRot());
         double dx = -Math.sin(yawRad) * currentSpeed;
         double dz = Math.cos(yawRad) * currentSpeed;
-        double dy = this.onGround() ? 0.0D : -0.08D; // Gravity
+
+        // Smooth vertical climbing with front axle / gravity
+        double heightDiff = targetGroundY - this.getY();
+        double dy;
+        if (heightDiff > 0.03D) {
+            dy = Math.min(heightDiff, Math.max(0.08D, Math.abs(currentSpeed) * 0.70D));
+        } else if (heightDiff < -0.05D) {
+            dy = Math.max(heightDiff, this.onGround() ? -0.25D : -0.08D);
+        } else {
+            dy = this.onGround() ? 0.0D : -0.08D;
+        }
 
         this.move(MoverType.SELF, new Vec3(dx, dy, dz));
 
@@ -438,7 +461,7 @@ public class GroundworksLoaderEntity extends Entity {
 
     @Override
     public float maxUpStep() {
-        return 1.25F;
+        return 0.35F;
     }
 
     @Override
