@@ -29,7 +29,6 @@ import net.minecraft.util.Mth;
 public class LoaderModel extends EntityModel<LoaderRenderState> {
 
     private final ModelPart rearChassis;
-    private final ModelPart cabinGlass;
     private final ModelPart beaconReflector;
     private final ModelPart rearLeftWheel;
     private final ModelPart rearRightWheel;
@@ -50,7 +49,6 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         super(root);
         this.rearChassis = root.getChild("rear_chassis");
         ModelPart cab = this.rearChassis.getChild("cab");
-        this.cabinGlass = cab.getChild("cabin_glass");
         this.beaconReflector = cab.getChild("beacon_base").getChild("beacon_reflector");
 
         this.rearLeftWheel = this.rearChassis.getChild("rear_left_wheel");
@@ -67,10 +65,6 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
 
         this.bucket = this.liftArms.getChild("bucket");
         this.carriedMaterial = this.bucket.getChild("carried_material");
-    }
-
-    public ModelPart getCabinGlass() {
-        return this.cabinGlass;
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -224,21 +218,6 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                 "beacon_reflector",
                 CubeListBuilder.create()
                         .texOffs(454, 0).addBox(-1.5F, -26.5F, -1.5F, 3.0F, 2.0F, 4.0F),
-                PartPose.offset(0.0F, 0.0F, 0.0F)
-        );
-
-        // Panoramic Safety Glass Windows: UV [264, 84] (rendered in translucent pass)
-        cab.addOrReplaceChild(
-                "cabin_glass",
-                CubeListBuilder.create()
-                        // Front windshield
-                        .texOffs(264, 84).addBox(-10.5F, -21.0F, 7.5F, 21.0F, 16.0F, 0.5F)
-                        // Left door glass
-                        .texOffs(264, 84).addBox(-12.0F, -21.0F, -4.5F, 0.5F, 15.0F, 11.0F)
-                        // Right door glass
-                        .texOffs(264, 84).addBox(11.5F, -21.0F, -4.5F, 0.5F, 15.0F, 11.0F)
-                        // Rear window
-                        .texOffs(264, 84).addBox(-10.5F, -21.0F, -6.0F, 21.0F, 15.0F, 0.5F),
                 PartPose.offset(0.0F, 0.0F, 0.0F)
         );
 
