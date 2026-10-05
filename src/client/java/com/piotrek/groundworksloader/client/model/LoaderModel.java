@@ -43,7 +43,9 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
     private final ModelPart zbarLinkage;
 
     private final ModelPart bucket;
-    private final ModelPart carriedMaterial;
+    private final ModelPart carriedDirt;
+    private final ModelPart carriedSand;
+    private final ModelPart carriedGravel;
 
     public LoaderModel(ModelPart root) {
         super(root);
@@ -64,7 +66,9 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         this.zbarLinkage = this.liftArms.getChild("zbar_linkage");
 
         this.bucket = this.liftArms.getChild("bucket");
-        this.carriedMaterial = this.bucket.getChild("carried_material");
+        this.carriedDirt = this.bucket.getChild("carried_dirt");
+        this.carriedSand = this.bucket.getChild("carried_sand");
+        this.carriedGravel = this.bucket.getChild("carried_gravel");
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -392,14 +396,31 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                 PartPose.offset(0.0F, 19.5F, 34.0F)
         );
 
-        // ── Dynamic Carried Granular Material inside Bucket (with Heaped Surcharge): UV [0, 234] ──
+        // ── Dynamic Carried Granular Material inside Bucket (by material type) ──
+        // 1. Ziemia / Gleba (Dirt / Soil): UV [0, 234]
         bucket.addOrReplaceChild(
-                "carried_material",
+                "carried_dirt",
                 CubeListBuilder.create()
-                        // Wypełnienie niecki łyżki (tylko gdy wieziemy urobek)
                         .texOffs(0, 234).addBox(-21.5F, 0.0F, 3.0F, 43.0F, 4.5F, 16.0F)
-                        // Stożek czuba urobku spiętrzony ponad krawędź
                         .texOffs(0, 234).addBox(-18.0F, -5.0F, 5.0F, 36.0F, 5.0F, 12.0F),
+                PartPose.offset(0.0F, 0.0F, 0.0F)
+        );
+
+        // 2. Piasek (Sand - żółto-złoty piaskowy odcień): UV [0, 304]
+        bucket.addOrReplaceChild(
+                "carried_sand",
+                CubeListBuilder.create()
+                        .texOffs(0, 304).addBox(-21.5F, 0.0F, 3.0F, 43.0F, 4.5F, 16.0F)
+                        .texOffs(0, 304).addBox(-18.0F, -5.0F, 5.0F, 36.0F, 5.0F, 12.0F),
+                PartPose.offset(0.0F, 0.0F, 0.0F)
+        );
+
+        // 3. Żwir / Kamień kruszony (Gravel - popielato-kamienny odcień): UV [0, 374]
+        bucket.addOrReplaceChild(
+                "carried_gravel",
+                CubeListBuilder.create()
+                        .texOffs(0, 374).addBox(-21.5F, 0.0F, 3.0F, 43.0F, 4.5F, 16.0F)
+                        .texOffs(0, 374).addBox(-18.0F, -5.0F, 5.0F, 36.0F, 5.0F, 12.0F),
                 PartPose.offset(0.0F, 0.0F, 0.0F)
         );
 
@@ -434,14 +455,31 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         // Z-Bar bell crank pivots proportionally as bucket tilts
         this.zbarLinkage.xRot = bucketRad * 0.50F;
 
-        // 5. Carried Granular Material Surcharge (scales dynamically with fill level)
+        // 5. Dynamic Carried Granular Material matching the exact scooped material type
+        this.carriedDirt.visible = false;
+        this.carriedSand.visible = false;
+        this.carriedGravel.visible = false;
+
         if (state.carriedUnits > 0) {
-            this.carriedMaterial.visible = true;
             float fill = Math.min(1.0F, state.fillRatio);
-            this.carriedMaterial.yScale = 0.35F + (fill * 0.85F);
-            this.carriedMaterial.zScale = 0.45F + (fill * 0.65F);
-        } else {
-            this.carriedMaterial.visible = false;
+            float yScale = 0.35F + (fill * 0.85F);
+            float zScale = 0.45F + (fill * 0.65F);
+
+            ModelPart activeSurcharge;
+            if (state.carriedMaterialId == 2) {
+                // Sand
+                activeSurcharge = this.carriedSand;
+            } else if (state.carriedMaterialId == 3) {
+                // Gravel
+                activeSurcharge = this.carriedGravel;
+            } else {
+                // Dirt or default
+                activeSurcharge = this.carriedDirt;
+            }
+
+            activeSurcharge.visible = true;
+            activeSurcharge.yScale = yScale;
+            activeSurcharge.zScale = zScale;
         }
 
         // 6. Amber Rotary Safety Beacon
