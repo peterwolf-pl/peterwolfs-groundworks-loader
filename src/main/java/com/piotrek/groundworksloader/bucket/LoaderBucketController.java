@@ -187,6 +187,12 @@ public class LoaderBucketController {
                 ResolvedSweepContact contact = resolvedContacts.get(i);
                 ContactTarget target = contact.target();
 
+                if (carriedMaterial != GranularMaterial.EMPTY
+                        && target.material() != GranularMaterial.EMPTY
+                        && target.material().id() != carriedMaterial.id()) {
+                    continue;
+                }
+
                 int room = BUCKET_CAPACITY - carriedUnits;
                 int remainingBudget = MAX_EXCAVATION_PER_TICK - totalExcavated;
                 int remainingContacts = resolvedContacts.size() - i;
