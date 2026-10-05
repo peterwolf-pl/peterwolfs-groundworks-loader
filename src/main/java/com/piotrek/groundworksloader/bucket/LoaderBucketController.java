@@ -56,6 +56,11 @@ public class LoaderBucketController {
 
     private record ContactTarget(BlockPos pos, GranularMaterial material) {}
 
+    private record ResolvedSweepContact(
+            Vec3 worldPoint,
+            ContactTarget target
+    ) {}
+
     public void updateAngles(float boomInput, float bucketInput) {
         if (boomInput > 0.05F) {
             boomAngle = Math.min(MAX_BOOM_ANGLE, boomAngle + (BOOM_SPEED * boomInput));
@@ -155,29 +160,49 @@ public class LoaderBucketController {
                 && bucketAngle < 20.0F
                 && sweep.valid()) {
 
+            // Resolve contacts before excavation so the per-tick intake budget
+            // can be distributed across the entire swept edge instead of being
+            // consumed by the first few teeth in iteration order.
+            List<ResolvedSweepContact> resolvedContacts = new ArrayList<>();
             for (LoaderSweptBucketVolume.Contact contact : sweep.contacts()) {
-                if (carriedUnits >= BUCKET_CAPACITY
-                        || totalExcavated >= MAX_EXCAVATION_PER_TICK) {
-                    break;
-                }
-
                 ContactTarget target = resolveContact(terrain, contact.worldPoint());
                 if (target == null) {
                     continue;
                 }
-
                 if (carriedMaterial != GranularMaterial.EMPTY
                         && target.material() != GranularMaterial.EMPTY
                         && target.material().id() != carriedMaterial.id()) {
                     continue;
                 }
+                resolvedContacts.add(new ResolvedSweepContact(
+                        contact.worldPoint(), target));
+            }
+
+            for (int i = 0; i < resolvedContacts.size(); i++) {
+                if (carriedUnits >= BUCKET_CAPACITY
+                        || totalExcavated >= MAX_EXCAVATION_PER_TICK) {
+                    break;
+                }
+
+                ResolvedSweepContact contact = resolvedContacts.get(i);
+                ContactTarget target = contact.target();
 
                 int room = BUCKET_CAPACITY - carriedUnits;
+                int remainingBudget = MAX_EXCAVATION_PER_TICK - totalExcavated;
+                int remainingContacts = resolvedContacts.size() - i;
+
+                // Fair-share the remaining budget across all remaining contacts.
+                // This makes the cut represent the whole swept bucket volume,
+                // rather than only the first left-to-right tooth samples.
+                int fairShare = Math.max(
+                        1,
+                        (remainingBudget + remainingContacts - 1) / remainingContacts
+                );
                 int requested = Math.min(
                         room,
                         Math.min(
                                 MAX_EXCAVATION_PER_CONTACT,
-                                MAX_EXCAVATION_PER_TICK - totalExcavated
+                                Math.min(remainingBudget, fairShare)
                         )
                 );
                 if (requested <= 0) {
