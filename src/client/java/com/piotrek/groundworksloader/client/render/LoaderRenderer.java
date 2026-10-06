@@ -93,6 +93,11 @@ public class LoaderRenderer extends EntityRenderer<GroundworksLoaderEntity, Load
                 state.outlineColor
         );
 
+        // Render carried material as a generated loose-material surface using the
+        // Groundworks material's source-block texture. This works for cobblestone
+        // and future registry materials without material-ID-specific loader code.
+        GranularBucketContentsRenderer.submit(state, stack, collector);
+
         stack.popPose();
     }
 }

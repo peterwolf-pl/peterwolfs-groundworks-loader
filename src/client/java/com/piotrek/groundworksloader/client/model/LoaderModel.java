@@ -8,7 +8,6 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
-import net.minecraft.util.Mth;
 
 /**
  * Geometric hierarchy model for the 4-wheel industrial wheel loader.
@@ -22,7 +21,7 @@ import net.minecraft.util.Mth;
  *   <li>Twin curved heavy lift arms with cross-tube and animated hydraulic lift cylinders.</li>
  *   <li>Central Z-bar bell crank linkage and hydraulic tilt cylinder.</li>
  *   <li>Heavy 3.0m excavation scoop bucket with 6 forged teeth, side cutters, and top spill guard.</li>
- *   <li>Dynamic live carried granular material layer inside the bucket bowl.</li>
+ *   <li>Generated loose-material mound rendered separately inside the bucket bowl.</li>
  *   <li>Amber rotary safety beacon on the cab roof.</li>
  * </ul>
  */
@@ -43,9 +42,6 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
     private final ModelPart zbarLinkage;
 
     private final ModelPart bucket;
-    private final ModelPart carriedDirt;
-    private final ModelPart carriedSand;
-    private final ModelPart carriedGravel;
 
     public LoaderModel(ModelPart root) {
         super(root);
@@ -66,9 +62,6 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         this.zbarLinkage = this.liftArms.getChild("zbar_linkage");
 
         this.bucket = this.liftArms.getChild("bucket");
-        this.carriedDirt = this.bucket.getChild("carried_dirt");
-        this.carriedSand = this.bucket.getChild("carried_sand");
-        this.carriedGravel = this.bucket.getChild("carried_gravel");
     }
 
     public static LayerDefinition createBodyLayer() {
@@ -396,33 +389,9 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
                 PartPose.offset(0.0F, 19.5F, 34.0F)
         );
 
-        // ── Dynamic Carried Granular Material inside Bucket (by material type) ──
-        // 1. Ziemia / Gleba (Dirt / Soil): UV [0, 234]
-        bucket.addOrReplaceChild(
-                "carried_dirt",
-                CubeListBuilder.create()
-                        .texOffs(0, 234).addBox(-21.5F, 0.0F, 3.0F, 43.0F, 4.5F, 16.0F)
-                        .texOffs(0, 234).addBox(-18.0F, -5.0F, 5.0F, 36.0F, 5.0F, 12.0F),
-                PartPose.offset(0.0F, 0.0F, 0.0F)
-        );
-
-        // 2. Piasek (Sand - żółto-złoty piaskowy odcień): UV [0, 304]
-        bucket.addOrReplaceChild(
-                "carried_sand",
-                CubeListBuilder.create()
-                        .texOffs(0, 304).addBox(-21.5F, 0.0F, 3.0F, 43.0F, 4.5F, 16.0F)
-                        .texOffs(0, 304).addBox(-18.0F, -5.0F, 5.0F, 36.0F, 5.0F, 12.0F),
-                PartPose.offset(0.0F, 0.0F, 0.0F)
-        );
-
-        // 3. Żwir / Kamień kruszony (Gravel - popielato-kamienny odcień): UV [0, 374]
-        bucket.addOrReplaceChild(
-                "carried_gravel",
-                CubeListBuilder.create()
-                        .texOffs(0, 374).addBox(-21.5F, 0.0F, 3.0F, 43.0F, 4.5F, 16.0F)
-                        .texOffs(0, 374).addBox(-18.0F, -5.0F, 5.0F, 36.0F, 5.0F, 12.0F),
-                PartPose.offset(0.0F, 0.0F, 0.0F)
-        );
+        // Bucket contents are rendered separately as a generated granular mound.
+        // Keeping loose material out of the static entity model removes the old
+        // cuboid surcharge and allows any Groundworks material texture to be used.
 
         return LayerDefinition.create(mesh, 512, 512);
     }
@@ -455,32 +424,8 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         // Z-Bar bell crank pivots proportionally as bucket tilts
         this.zbarLinkage.xRot = bucketRad * 0.50F;
 
-        // 5. Dynamic Carried Granular Material matching the exact scooped material type
-        this.carriedDirt.visible = false;
-        this.carriedSand.visible = false;
-        this.carriedGravel.visible = false;
-
-        if (state.carriedUnits > 0) {
-            float fill = Math.min(1.0F, state.fillRatio);
-            float yScale = 0.35F + (fill * 0.85F);
-            float zScale = 0.45F + (fill * 0.65F);
-
-            ModelPart activeSurcharge;
-            if (state.carriedMaterialId == 2) {
-                // Sand
-                activeSurcharge = this.carriedSand;
-            } else if (state.carriedMaterialId == 3) {
-                // Gravel
-                activeSurcharge = this.carriedGravel;
-            } else {
-                // Dirt or default
-                activeSurcharge = this.carriedDirt;
-            }
-
-            activeSurcharge.visible = true;
-            activeSurcharge.yScale = yScale;
-            activeSurcharge.zScale = zScale;
-        }
+        // 5. Loose material is rendered by GranularBucketContentsRenderer.
+        // No material-ID-specific ModelParts are kept in the loader model.
 
         // 6. Amber Rotary Safety Beacon
         this.beaconReflector.yRot = state.beaconSpin;
