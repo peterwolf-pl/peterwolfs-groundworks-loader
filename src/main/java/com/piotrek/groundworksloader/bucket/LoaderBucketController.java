@@ -215,19 +215,27 @@ public class LoaderBucketController {
                     break;
                 }
 
+                GranularMaterial requiredMaterial =
+                        carriedMaterial != GranularMaterial.EMPTY
+                                ? carriedMaterial
+                                : target.material();
+
                 ExcavationResult result = terrain.excavateAt(
-                        contact.worldPoint(), requested);
+                        contact.worldPoint(),
+                        requested,
+                        requiredMaterial
+                );
                 if (!result.success()) {
                     continue;
                 }
 
-                // A world-space brush can cross a material boundary. Never mix
-                // materials in one bucket; restore a rejected material instead.
-                if (carriedMaterial != GranularMaterial.EMPTY
-                        && result.material() != GranularMaterial.EMPTY
-                        && result.material().id() != carriedMaterial.id()) {
-                    terrain.deposit(target.pos(), result.material(), result.unitsRemoved());
-                    continue;
+                if (requiredMaterial != GranularMaterial.EMPTY
+                        && result.material().id() != requiredMaterial.id()) {
+                    throw new IllegalStateException(
+                            "Groundworks material filter violation: required="
+                                    + requiredMaterial.name()
+                                    + ", removed=" + result.material().name()
+                    );
                 }
 
                 totalExcavated += result.unitsRemoved();

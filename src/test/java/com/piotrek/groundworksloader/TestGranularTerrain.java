@@ -102,10 +102,18 @@ public class TestGranularTerrain implements IGranularTerrainAccess {
     }
 
     @Override
-    public ExcavationResult excavateAt(Vec3 worldPoint, int maxUnits) {
+    public ExcavationResult excavateAt(
+            Vec3 worldPoint,
+            int maxUnits,
+            GranularMaterial requiredMaterial
+    ) {
         if (maxUnits <= 0) {
             return ExcavationResult.NONE;
         }
+
+        GranularMaterial required = requiredMaterial != null && requiredMaterial.id() != 0
+                ? requiredMaterial
+                : null;
 
         double radius = DEFAULT_EXCAVATION_RADIUS;
         double radiusSq = radius * radius;
@@ -123,6 +131,12 @@ public class TestGranularTerrain implements IGranularTerrainAccess {
             for (int by = minBlockY; by <= maxBlockY; by++) {
                 for (int bz = minBlockZ; bz <= maxBlockZ; bz++) {
                     BlockPos pos = new BlockPos(bx, by, bz);
+                    GranularMaterial candidateMaterial = getMaterial(pos);
+                    if (candidateMaterial == GranularMaterial.EMPTY
+                            || (required != null && candidateMaterial.id() != required.id())) {
+                        continue;
+                    }
+
                     GranularCell cell = getOrConvert(pos);
                     if (cell == null || cell.isEmpty()) {
                         continue;
@@ -160,7 +174,9 @@ public class TestGranularTerrain implements IGranularTerrainAccess {
         }
 
         candidates.sort(Comparator.comparingDouble(VoxelCandidate::distanceSq));
-        GranularMaterial material = candidates.getFirst().cell().material();
+        GranularMaterial material = required != null
+                ? required
+                : candidates.getFirst().cell().material();
         int materialId = material.id();
 
         int removed = 0;

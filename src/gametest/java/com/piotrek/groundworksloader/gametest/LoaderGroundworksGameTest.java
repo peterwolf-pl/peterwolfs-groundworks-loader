@@ -2,6 +2,7 @@ package com.piotrek.groundworksloader.gametest;
 
 import com.piotrek.groundworks.api.GroundworksApi;
 import com.piotrek.groundworks.api.material.GranularMaterial;
+import com.piotrek.groundworks.api.material.GranularMaterialRegistry;
 import com.piotrek.groundworksloader.bucket.LoaderBucketController;
 import com.piotrek.groundworksloader.integration.groundworks.GroundworksLoaderAdapter;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
@@ -31,6 +32,7 @@ public final class LoaderGroundworksGameTest implements FabricClientGameTest {
             server.runOnServer(minecraftServer -> {
                 ServerLevel level = minecraftServer.overworld();
                 testSweptBucketExcavatesRealGroundworks(level);
+                testMaterialAwareAdapterBoundary(level);
             });
 
             context.waitTicks(5);
@@ -159,6 +161,30 @@ public final class LoaderGroundworksGameTest implements FabricClientGameTest {
         if (!(dumpLip.y > receivingCell.getY() + 1.0D)) {
             throw new AssertionError(
                     "GameTest setup must keep the lip well above the receiving surface");
+        }
+    }
+
+    private static void testMaterialAwareAdapterBoundary(ServerLevel level) {
+        BlockPos dirtPos = new BlockPos(10, BASE_Y - 1, 3);
+        BlockPos sandPos = new BlockPos(11, BASE_Y - 1, 3);
+        level.setBlock(dirtPos, Blocks.DIRT.defaultBlockState(), 3);
+        level.setBlock(sandPos, Blocks.SAND.defaultBlockState(), 3);
+
+        var result = GroundworksLoaderAdapter.of(level).excavateAt(
+                new Vec3(11.0D, BASE_Y - 0.5D, 3.5D),
+                128,
+                GranularMaterialRegistry.DIRT
+        );
+
+        if (!result.success()
+                || result.material().id() != GranularMaterialRegistry.DIRT.id()) {
+            throw new AssertionError("Loader adapter did not excavate requested dirt");
+        }
+        if (effectiveGranularUnits(level, dirtPos) >= 512) {
+            throw new AssertionError("Loader adapter did not remove dirt at mixed boundary");
+        }
+        if (effectiveGranularUnits(level, sandPos) != 512) {
+            throw new AssertionError("Loader adapter modified adjacent sand at mixed boundary");
         }
     }
 

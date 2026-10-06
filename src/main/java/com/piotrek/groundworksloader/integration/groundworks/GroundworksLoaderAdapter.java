@@ -42,11 +42,20 @@ public class GroundworksLoaderAdapter implements IGranularTerrainAccess {
     }
 
     @Override
-    public ExcavationResult excavateAt(Vec3 worldPoint, int maxUnits) {
+    public ExcavationResult excavateAt(
+            Vec3 worldPoint,
+            int maxUnits,
+            GranularMaterial requiredMaterial
+    ) {
         if (maxUnits <= 0) {
             return ExcavationResult.NONE;
         }
-        return GroundworksApi.excavateAt(level, worldPoint, maxUnits);
+        return GroundworksApi.excavateAt(
+                level,
+                worldPoint,
+                maxUnits,
+                requiredMaterial
+        );
     }
 
     @Override
