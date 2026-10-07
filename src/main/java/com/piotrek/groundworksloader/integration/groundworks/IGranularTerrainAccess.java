@@ -46,5 +46,29 @@ public interface IGranularTerrainAccess {
 
     int deposit(BlockPos pos, GranularMaterial material, int units);
 
+    /**
+     * Attempt to transfer material into a world-space machine/container under
+     * the bucket lip before falling back to terrain deposition.
+     *
+     * <p>receiverPresent=true with unitsConsumed=0 is meaningful: a receiver
+     * exists but could not accept or overflow this material, so the source must
+     * keep it instead of silently dumping elsewhere.</p>
+     */
+    default ContainerTransferResult transferToWorldContainer(
+            Vec3 lip,
+            GranularMaterial material,
+            int units
+    ) {
+        return ContainerTransferResult.NONE;
+    }
+
+    record ContainerTransferResult(
+            boolean receiverPresent,
+            int unitsConsumed
+    ) {
+        public static final ContainerTransferResult NONE =
+                new ContainerTransferResult(false, 0);
+    }
+
     void markSimulate(BlockPos pos);
 }

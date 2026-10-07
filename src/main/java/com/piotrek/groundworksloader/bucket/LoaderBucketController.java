@@ -261,21 +261,45 @@ public class LoaderBucketController {
             );
             flowRate = Math.min(flowRate, 96);
 
-            BlockPos dumpTarget = terrain.findDepositSurface(
-                    lipCenter,
-                    carriedMaterial,
-                    DUMP_SURFACE_SEARCH_DEPTH
-            );
+            IGranularTerrainAccess.ContainerTransferResult transfer =
+                    terrain.transferToWorldContainer(
+                            lipCenter,
+                            carriedMaterial,
+                            flowRate
+                    );
 
-            if (dumpTarget != null) {
-                int deposited = terrain.deposit(
-                        dumpTarget, carriedMaterial, flowRate);
-                if (deposited > 0) {
-                    totalDeposited += deposited;
-                    carriedUnits -= deposited;
-                    affected.add(dumpTarget);
-                    terrain.markSimulate(dumpTarget);
+            if (transfer.receiverPresent()) {
+                int consumed = Math.min(
+                        carriedUnits,
+                        Math.max(0, transfer.unitsConsumed())
+                );
+
+                if (consumed > 0) {
+                    totalDeposited += consumed;
+                    carriedUnits -= consumed;
                     isDumping = true;
+                }
+            } else {
+                BlockPos dumpTarget = terrain.findDepositSurface(
+                        lipCenter,
+                        carriedMaterial,
+                        DUMP_SURFACE_SEARCH_DEPTH
+                );
+
+                if (dumpTarget != null) {
+                    int deposited = terrain.deposit(
+                            dumpTarget,
+                            carriedMaterial,
+                            flowRate
+                    );
+
+                    if (deposited > 0) {
+                        totalDeposited += deposited;
+                        carriedUnits -= deposited;
+                        affected.add(dumpTarget);
+                        terrain.markSimulate(dumpTarget);
+                        isDumping = true;
+                    }
                 }
             }
 
