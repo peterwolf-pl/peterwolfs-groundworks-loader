@@ -103,7 +103,7 @@ public class LoaderHudOverlay implements HudElement {
                         loader.getBoomAngle(),
                         loader.getBucketAngle()
                 ).stream()
-                .mapToDouble(Vec3::y)
+                .mapToDouble(point -> point.y)
                 .min()
                 .orElse(loader.getY());
 

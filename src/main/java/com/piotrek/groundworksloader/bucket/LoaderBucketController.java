@@ -117,7 +117,7 @@ public class LoaderBucketController {
         double bucketPivotY = armPivotY + (bRelY * cosB + bRelZ * sinB);
         double bucketPivotZ = armPivotZ + (-bRelY * sinB + bRelZ * cosB);
 
-        double tRelY = 0.20D;
+        double tRelY = -0.28125D;
         double tRelZ = 1.00D;
 
         double totalRad = boomRad + bucketRad;
