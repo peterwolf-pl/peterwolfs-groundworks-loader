@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -15,27 +16,28 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/**
- * Starts and tracks positional diesel engine audio loops for running wheel loaders.
- */
 public final class LoaderEngineSoundController {
 
-    private static final Map<Integer, EngineLoop> ACTIVE = new HashMap<>();
+    private static final Map<Integer, EnginePair> ACTIVE = new HashMap<>();
     private static ClientLevel activeLevel;
 
     private LoaderEngineSoundController() {}
 
     public static void clientTick(Minecraft client) {
         if (activeLevel != client.level) {
-            ACTIVE.values().forEach(EngineLoop::stopNow);
+            ACTIVE.values().forEach(EnginePair::stopNow);
             ACTIVE.clear();
             activeLevel = client.level;
         }
         if (client.level == null) return;
 
-        Iterator<EngineLoop> iterator = ACTIVE.values().iterator();
+        Iterator<EnginePair> iterator = ACTIVE.values().iterator();
         while (iterator.hasNext()) {
-            if (iterator.next().isStopped()) iterator.remove();
+            EnginePair pair = iterator.next();
+            if (pair.stopped()) {
+                pair.stopNow();
+                iterator.remove();
+            }
         }
 
         for (Entity entity : client.level.entitiesForRendering()) {
@@ -44,19 +46,40 @@ public final class LoaderEngineSoundController {
                     || ACTIVE.containsKey(loader.getId())) {
                 continue;
             }
-            EngineLoop sound = new EngineLoop(loader);
-            ACTIVE.put(loader.getId(), sound);
-            client.getSoundManager().play(sound);
+            EnginePair pair = new EnginePair(loader);
+            ACTIVE.put(loader.getId(), pair);
+            client.getSoundManager().play(pair.idle);
+            client.getSoundManager().play(pair.load);
+        }
+    }
+
+    private record EnginePair(EngineLoop idle, EngineLoop load) {
+        private EnginePair(GroundworksLoaderEntity loader) {
+            this(
+                    new EngineLoop(loader, GroundworksLoaderMod.ENGINE_LOOP, false),
+                    new EngineLoop(loader, GroundworksLoaderMod.ENGINE_LOAD, true)
+            );
+        }
+
+        private boolean stopped() {
+            return idle.isStopped() || load.isStopped();
+        }
+
+        private void stopNow() {
+            idle.stopNow();
+            load.stopNow();
         }
     }
 
     private static final class EngineLoop extends AbstractTickableSoundInstance {
 
         private final GroundworksLoaderEntity loader;
+        private final boolean loadLayer;
 
-        private EngineLoop(GroundworksLoaderEntity loader) {
-            super(GroundworksLoaderMod.ENGINE_LOOP, SoundSource.NEUTRAL, RandomSource.create());
+        private EngineLoop(GroundworksLoaderEntity loader, SoundEvent sound, boolean loadLayer) {
+            super(sound, SoundSource.NEUTRAL, RandomSource.create());
             this.loader = loader;
+            this.loadLayer = loadLayer;
             this.looping = true;
             this.delay = 0;
             this.attenuation = SoundInstance.Attenuation.LINEAR;
@@ -76,10 +99,11 @@ public final class LoaderEngineSoundController {
             this.x = loader.getX();
             this.y = loader.getY() + 1.2D;
             this.z = loader.getZ();
-            boolean isHydraulic = loader.isScooping() || loader.isDumping();
-            EngineSoundProfile.Mix mix = EngineSoundProfile.forLoaderState(loader.getForwardSpeed(), isHydraulic);
-            this.volume = mix.volume();
-            this.pitch = mix.pitch();
+            boolean hydraulicActive = loader.isScooping() || loader.isDumping();
+            EngineSoundProfile.Mix mix =
+                    EngineSoundProfile.forLoaderState(loader.getForwardSpeed(), hydraulicActive);
+            this.volume = loadLayer ? mix.loadVolume() : mix.volume();
+            this.pitch = loadLayer ? mix.loadPitch() : mix.pitch();
         }
 
         private void stopNow() {

@@ -67,6 +67,9 @@ public class GroundworksLoaderEntity extends Entity {
             SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> ENGINE_RUNNING =
             SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.BOOLEAN);
+    // Append new synced fields after the legacy loader schema to preserve accessor IDs.
+    private static final EntityDataAccessor<Boolean> HORN_HELD =
+            SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.BOOLEAN);
 
     // ── Subsystems ───────────────────────────────────────────────────
     private final LoaderMovementController movementController = new LoaderMovementController();
@@ -102,6 +105,7 @@ public class GroundworksLoaderEntity extends Entity {
         builder.define(IS_SCOOPING, false);
         builder.define(IS_DUMPING, false);
         builder.define(ENGINE_RUNNING, false);
+        builder.define(HORN_HELD, false);
     }
 
     public void setControlInputs(float throttle, float steer, float boomLift, float bucketTilt) {
@@ -110,6 +114,10 @@ public class GroundworksLoaderEntity extends Entity {
         this.inputBoomLift = Mth.clamp(boomLift, -1.0F, 1.0F);
         this.inputBucketTilt = Mth.clamp(bucketTilt, -1.0F, 1.0F);
         this.inputFreshTicks = 5;
+    }
+
+    public void setHornInput(boolean hornActive) {
+        this.entityData.set(HORN_HELD, hornActive && this.getControllingPassenger() != null);
     }
 
     @Override
@@ -154,6 +162,9 @@ public class GroundworksLoaderEntity extends Entity {
 
         boolean hasDriver = driver != null;
         this.entityData.set(ENGINE_RUNNING, hasDriver);
+        if (!hasDriver) {
+            this.entityData.set(HORN_HELD, false);
+        }
 
         // 2. Physics & Motion simulation
         LoaderMovementController.StepResult moveRes =
@@ -427,6 +438,10 @@ public class GroundworksLoaderEntity extends Entity {
 
     public boolean isEngineRunning() {
         return this.entityData.get(ENGINE_RUNNING);
+    }
+
+    public boolean isHornHeld() {
+        return this.entityData.get(HORN_HELD);
     }
 
     @Override

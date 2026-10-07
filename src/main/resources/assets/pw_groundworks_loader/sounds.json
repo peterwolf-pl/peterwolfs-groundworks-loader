@@ -2,13 +2,41 @@
   "engine_loop": {
     "subtitle": "subtitles.pw_groundworks_loader.engine_loop",
     "sounds": [
-      "pw_groundworks_loader:engine_loop"
+      {
+        "name": "pw_groundworks_loader:engine_loop",
+        "attenuation_distance": 14
+      }
+    ]
+  },
+  "engine_load": {
+    "sounds": [
+      {
+        "name": "pw_groundworks_loader:engine_load",
+        "attenuation_distance": 14
+      }
     ]
   },
   "hydraulics": {
     "subtitle": "subtitles.pw_groundworks_loader.hydraulics",
     "sounds": [
       "minecraft:block.iron.step"
+    ]
+  },
+  "truck_horn_short": {
+    "subtitle": "subtitles.pw_groundworks_loader.truck_horn",
+    "sounds": ["pw_groundworks_loader:truck_horn_short"]
+  },
+  "truck_horn_long": {
+    "subtitle": "subtitles.pw_groundworks_loader.truck_horn",
+    "sounds": ["pw_groundworks_loader:truck_horn_long"]
+  },
+  "truck_horn_loop": {
+    "subtitle": "subtitles.pw_groundworks_loader.truck_horn",
+    "sounds": [
+      {
+        "name": "pw_groundworks_loader:truck_horn_loop",
+        "attenuation_distance": 64
+      }
     ]
   }
 }

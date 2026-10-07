@@ -1,29 +1,29 @@
 package com.piotrek.groundworksloader.vehicle;
 
-/**
- * Maps authoritative loader vehicle speed, engine load and hydraulic activity to a diesel sound profile.
- */
+/** Maps loader drive and hydraulic load onto the excavator diesel sound layers. */
 public final class EngineSoundProfile {
 
-    private static final float IDLE_VOLUME = 0.60F;
-    private static final float LOAD_VOLUME = 0.85F;
-    private static final float IDLE_PITCH = 0.72F;
-    private static final float LOAD_PITCH = 1.05F;
+    private static final float IDLE_VOLUME = 0.42F;
+    private static final float DRIVE_VOLUME = 0.64F;
+    private static final float IDLE_PITCH = 0.94F;
+    private static final float DRIVE_PITCH = 1.12F;
+    private static final float LOAD_LAYER_VOLUME = 0.86F;
 
     private EngineSoundProfile() {}
 
-    public record Mix(float volume, float pitch) {}
+    public record Mix(float volume, float pitch, float loadVolume, float loadPitch) {}
 
     public static Mix forLoaderState(float speed, boolean isHydraulicActive) {
-        float absSpeed = Math.abs(speed);
-        float load = Math.min(1.0F, absSpeed / LoaderMovementController.MAX_FORWARD_SPEED);
-        if (isHydraulicActive) {
-            load = Math.max(load, 0.45F);
-        }
+        float driveLoad = Math.min(1.0F, Math.abs(speed) / LoaderMovementController.MAX_FORWARD_SPEED);
+        float hydraulicLoad = isHydraulicActive ? 0.65F : 0.0F;
+        float load = Math.max(hydraulicLoad, driveLoad * 0.78F);
+        float lug = hydraulicLoad * (1.0F - driveLoad);
 
         return new Mix(
-                IDLE_VOLUME + (LOAD_VOLUME - IDLE_VOLUME) * load,
-                IDLE_PITCH + (LOAD_PITCH - IDLE_PITCH) * load
+                IDLE_VOLUME + (DRIVE_VOLUME - IDLE_VOLUME) * load,
+                IDLE_PITCH + (DRIVE_PITCH - IDLE_PITCH) * load,
+                LOAD_LAYER_VOLUME * load,
+                0.88F + 0.16F * driveLoad - 0.06F * lug
         );
     }
 }
