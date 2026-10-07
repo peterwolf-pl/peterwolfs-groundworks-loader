@@ -201,7 +201,7 @@ public class GroundworksLoaderEntity extends Entity {
         this.move(MoverType.SELF, new Vec3(dx, dy, dz));
 
         // 3. Groundworks Excavation & Dumping simulation
-        GroundworksLoaderAdapter adapter = GroundworksLoaderAdapter.of(serverLevel);
+        GroundworksLoaderAdapter adapter = GroundworksLoaderAdapter.of(serverLevel, this);
         BucketTickResult bucketRes = this.bucketController.tick(
                 adapter,
                 this.position(),
