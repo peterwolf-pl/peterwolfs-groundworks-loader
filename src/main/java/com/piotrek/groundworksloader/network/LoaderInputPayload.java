@@ -13,6 +13,10 @@ public record LoaderInputPayload(
         boolean hornActive
 ) implements CustomPacketPayload {
 
+    public LoaderInputPayload(float throttle, float steer, float boomLift, float bucketTilt) {
+        this(throttle, steer, boomLift, bucketTilt, false);
+    }
+
     public static final Type<LoaderInputPayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath("pw_groundworks_loader", "loader_input"));
 
