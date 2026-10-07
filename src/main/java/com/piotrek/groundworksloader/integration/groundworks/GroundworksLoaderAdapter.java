@@ -1,11 +1,14 @@
 package com.piotrek.groundworksloader.integration.groundworks;
 
 import com.piotrek.groundworks.api.GroundworksApi;
+import com.piotrek.groundworks.api.container.GranularContainerTransferApi;
+import com.piotrek.groundworks.api.container.IWorldGranularContainer;
 import com.piotrek.groundworks.api.deposit.DepositResult;
 import com.piotrek.groundworks.api.excavation.ExcavationResult;
 import com.piotrek.groundworks.api.material.GranularMaterial;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -16,13 +19,24 @@ import org.jetbrains.annotations.Nullable;
 public class GroundworksLoaderAdapter implements IGranularTerrainAccess {
 
     private final ServerLevel level;
+    @Nullable
+    private final Entity source;
 
     public GroundworksLoaderAdapter(ServerLevel level) {
+        this(level, null);
+    }
+
+    public GroundworksLoaderAdapter(ServerLevel level, @Nullable Entity source) {
         this.level = level;
+        this.source = source;
     }
 
     public static GroundworksLoaderAdapter of(ServerLevel level) {
-        return new GroundworksLoaderAdapter(level);
+        return new GroundworksLoaderAdapter(level, null);
+    }
+
+    public static GroundworksLoaderAdapter of(ServerLevel level, Entity source) {
+        return new GroundworksLoaderAdapter(level, source);
     }
 
     @Override
@@ -92,6 +106,41 @@ public class GroundworksLoaderAdapter implements IGranularTerrainAccess {
         DepositResult result =
                 GroundworksApi.depositWithOverflow(level, pos, material, units);
         return result.unitsDeposited();
+    }
+
+    @Override
+    public ContainerTransferResult transferToWorldContainer(
+            Vec3 lip,
+            GranularMaterial material,
+            int units
+    ) {
+        if (units <= 0 || material == null || material.id() == 0) {
+            return ContainerTransferResult.NONE;
+        }
+
+        IWorldGranularContainer receiver =
+                GranularContainerTransferApi.findReceiver(
+                        level,
+                        lip,
+                        source,
+                        4.0D
+                );
+
+        if (receiver == null) {
+            return ContainerTransferResult.NONE;
+        }
+
+        int consumed = receiver.receiveMaterialAt(
+                level,
+                lip,
+                material,
+                units
+        );
+
+        return new ContainerTransferResult(
+                true,
+                Math.clamp(consumed, 0, units)
+        );
     }
 
     @Override
