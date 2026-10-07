@@ -6,6 +6,8 @@
   "key.pw_groundworks_loader.boom_down": "Opuszczanie wysięgnika (Strzałka w dół)",
   "key.pw_groundworks_loader.bucket_open": "Otwieranie / wysyp łyżki (Strzałka w lewo)",
   "key.pw_groundworks_loader.bucket_close": "Zamykanie łyżki (Strzałka w prawo)",
-  "subtitles.pw_groundworks_loader.engine_loop": "Warkot silnika ładowarki",
-  "subtitles.pw_groundworks_loader.hydraulics": "Syk hydrauliki"
+  "key.pw_groundworks_loader.horn": "Klakson ciężarowy (C)",
+  "subtitles.pw_groundworks_loader.engine_loop": "Warkot diesla ładowarki",
+  "subtitles.pw_groundworks_loader.hydraulics": "Syk hydrauliki",
+  "subtitles.pw_groundworks_loader.truck_horn": "Klakson ładowarki"
 }

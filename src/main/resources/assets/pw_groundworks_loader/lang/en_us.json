@@ -6,6 +6,8 @@
   "key.pw_groundworks_loader.boom_down": "Lower Boom (Arrow Down)",
   "key.pw_groundworks_loader.bucket_open": "Open / Dump Bucket (Arrow Left)",
   "key.pw_groundworks_loader.bucket_close": "Close / Curl Bucket (Arrow Right)",
-  "subtitles.pw_groundworks_loader.engine_loop": "Wheel loader engine rumbles",
-  "subtitles.pw_groundworks_loader.hydraulics": "Hydraulics hiss"
+  "key.pw_groundworks_loader.horn": "Truck Horn (C)",
+  "subtitles.pw_groundworks_loader.engine_loop": "Wheel loader diesel engine rumbles",
+  "subtitles.pw_groundworks_loader.hydraulics": "Hydraulics hiss",
+  "subtitles.pw_groundworks_loader.truck_horn": "Wheel loader horn"
 }

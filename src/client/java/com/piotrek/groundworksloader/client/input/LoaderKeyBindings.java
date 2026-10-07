@@ -5,9 +5,6 @@ import com.piotrek.groundworksloader.GroundworksLoaderMod;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
 
-/**
- * Keybindings for the wheel loader boom elevation and bucket tilt.
- */
 public final class LoaderKeyBindings {
 
     public static final KeyMapping.Category CATEGORY =
@@ -17,6 +14,7 @@ public final class LoaderKeyBindings {
     public static KeyMapping KEY_BOOM_DOWN;
     public static KeyMapping KEY_BUCKET_OPEN;
     public static KeyMapping KEY_BUCKET_CLOSE;
+    public static KeyMapping KEY_HORN;
 
     private LoaderKeyBindings() {}
 
@@ -46,6 +44,13 @@ public final class LoaderKeyBindings {
                 "key.pw_groundworks_loader.bucket_close",
                 InputConstants.Type.KEYBOARD,
                 InputConstants.KEY_RIGHT,
+                CATEGORY
+        ));
+
+        KEY_HORN = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.pw_groundworks_loader.horn",
+                InputConstants.Type.KEYBOARD,
+                InputConstants.KEY_C,
                 CATEGORY
         ));
     }

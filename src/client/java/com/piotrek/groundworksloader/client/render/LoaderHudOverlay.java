@@ -10,13 +10,26 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 
 /**
- * Modern in-cab instrument HUD displayed while operating the wheel loader.
+ * High-contrast in-cab HUD for the Groundworks wheel loader.
  */
 public class LoaderHudOverlay implements HudElement {
 
     public static final Identifier ID = GroundworksLoaderMod.id("hud_overlay");
+
+    private static final int PANEL_BG = 0xE6000000;
+    private static final int PANEL_BORDER = 0xFFFFB000;
+    private static final int TEXT_PRIMARY = 0xFFFFFFFF;
+    private static final int TEXT_SECONDARY = 0xFFE6E6E6;
+    private static final int TEXT_MUTED = 0xFFB8B8B8;
+    private static final int TEXT_AMBER = 0xFFFFC247;
+    private static final int TEXT_GREEN = 0xFF72FF72;
+    private static final int TEXT_RED = 0xFFFF6868;
+    private static final int BAR_BG = 0xFF242424;
+    private static final int BAR_FILL = 0xFF25B7FF;
+    private static final int BAR_FULL = 0xFFFF6A3D;
 
     public static void register() {
         HudElementRegistry.addLast(ID, new LoaderHudOverlay());
@@ -25,89 +38,133 @@ public class LoaderHudOverlay implements HudElement {
     @Override
     public void extractRenderState(GuiGraphicsExtractor extractor, DeltaTracker deltaTracker) {
         Minecraft client = Minecraft.getInstance();
-        if (client.player == null) return;
-
+        if (client.player == null) {
+            return;
+        }
         if (!(client.player.getVehicle() instanceof GroundworksLoaderEntity loader)) {
             return;
         }
 
         Font font = client.font;
-        int x = 10;
-        int y = 10;
-        int width = 280;
-        int height = 76;
+        int x = 12;
+        int y = 12;
+        int width = 360;
+        int height = 112;
 
-        // Semi-transparent HUD backing plate
-        extractor.fill(x - 4, y - 4, x + width, y + height, 0x88000000);
-        extractor.outline(x - 4, y - 4, width + 4, height + 4, 0xFFFFAA00);
+        extractor.fill(x - 6, y - 6, x + width, y + height, PANEL_BG);
+        extractor.outline(x - 6, y - 6, width + 6, height + 6, PANEL_BORDER);
 
-        // Header
-        extractor.text(font, "§6§lPeterwolf's Groundworks Wheel Loader", x, y, 0xFFFFFF, true);
+        extractor.text(font, "PETERWOLF'S GROUNDWORKS WHEEL LOADER", x, y, TEXT_AMBER, true);
 
-        // Speed & Direction
         float speed = loader.getForwardSpeed();
-        float kmh = Math.abs(speed) * 72.0F; // Approx km/h in MC units
-        String gear = speed > 0.01F ? "§aD (Przód)" : (speed < -0.01F ? "§cR (Wsteczny)" : "§eN (Neutral)");
-        extractor.text(font, String.format("Napęd [WSAD]: %s §7| §f%.1f km/h", gear, kmh), x, y + 11, 0xFFFFFF, true);
+        float kmh = Math.abs(speed) * 72.0F;
+        String gear = speed > 0.01F ? "D / PRZÓD" : (speed < -0.01F ? "R / WSTECZNY" : "N / NEUTRAL");
+        int gearColor = speed > 0.01F ? TEXT_GREEN : (speed < -0.01F ? TEXT_RED : TEXT_AMBER);
+        extractor.text(font, String.format("Napęd: %s   %.1f km/h", gear, kmh), x, y + 13, gearColor, true);
 
-        // Boom Elevation
+        String action = loader.isScooping()
+                ? "ŁADOWANIE"
+                : (loader.isDumping() ? "WYSYP" : "GOTOWA");
+        int actionColor = loader.isScooping() || loader.isDumping() ? TEXT_AMBER : TEXT_GREEN;
+        extractor.text(font, "Stan: " + action, x + 230, y + 13, actionColor, true);
+
         float boom = loader.getBoomAngle();
-        String boomStatus;
-        if (boom > 20.0F) {
-            boomStatus = "§6§lW GÓRZE (Załadunek)";
-        } else if (boom >= 0.0F) {
-            boomStatus = "§a§lJAZDA / TRANSPORT";
-        } else if (boom >= -10.0F) {
-            boomStatus = "§e§lPOZIOM GRUNTU (Skrawanie)";
-        } else {
-            boomStatus = "§c§lGŁĘBOKIE KOPANIE / RÓW";
-        }
-        extractor.text(font, String.format("Wysięgnik [↑/↓]: §f%.1f° §7(%s§7)", boom, boomStatus), x, y + 22, 0xFFFFFF, true);
+        String boomStatus = boom > 20.0F
+                ? "ZAŁADUNEK"
+                : (boom >= 0.0F ? "TRANSPORT" : (boom >= -10.0F ? "SKRAWANIE" : "GŁĘBOKIE KOPANIE"));
+        int boomColor = boom < -10.0F ? TEXT_RED : (boom < 0.0F ? TEXT_AMBER : TEXT_PRIMARY);
+        extractor.text(
+                font,
+                String.format("Wysięgnik [↑/↓]: %.1f°   %s", boom, boomStatus),
+                x,
+                y + 26,
+                boomColor,
+                true
+        );
 
-        // Bucket Tilt
         float bucket = loader.getBucketAngle();
-        String bucketStatus;
-        if (bucket > 45.0F) {
-            bucketStatus = "§c§lPEŁNY WYWROT (Wysyp)";
-        } else if (bucket > 15.0F) {
-            bucketStatus = "§6§lOTWARTA";
-        } else if (bucket < -15.0F) {
-            bucketStatus = "§a§lZAMKNIĘTA (Transport)";
-        } else {
-            bucketStatus = "§ePOZIOMO";
-        }
-        extractor.text(font, String.format("Łyżka [←/→]: §f%.1f° §7(%s§7)", bucket, bucketStatus), x, y + 33, 0xFFFFFF, true);
+        String bucketStatus = bucket > 45.0F
+                ? "PEŁNY WYSYP"
+                : (bucket > 15.0F ? "OTWARTA" : (bucket < -15.0F ? "ZAMKNIĘTA" : "POZIOMO"));
+        int bucketColor = bucket > 15.0F ? TEXT_AMBER : TEXT_PRIMARY;
+        extractor.text(
+                font,
+                String.format("Łyżka [←/→]: %.1f°   %s", bucket, bucketStatus),
+                x,
+                y + 39,
+                bucketColor,
+                true
+        );
 
-        // Carried Material & Fill Bar
+        double lowestEdgeY = LoaderBucketController.getCuttingEdgePoints(
+                        loader.position(),
+                        loader.getYRot(),
+                        loader.getVehiclePitch(),
+                        loader.getBoomAngle(),
+                        loader.getBucketAngle()
+                ).stream()
+                .mapToDouble(point -> point.y)
+                .min()
+                .orElse(loader.getY());
+
+        double clearance = lowestEdgeY - loader.getY();
+        String clearanceText;
+        int clearanceColor;
+        if (clearance >= 0.0D) {
+            clearanceText = String.format("Dolna krawędź łyżki nad gruntem: +%.2f m", clearance);
+            clearanceColor = clearance > 0.05D ? TEXT_GREEN : TEXT_AMBER;
+        } else {
+            clearanceText = String.format("Dolna krawędź łyżki poniżej gruntu: %.2f m", clearance);
+            clearanceColor = TEXT_RED;
+        }
+        extractor.text(font, clearanceText, x, y + 52, clearanceColor, true);
+
         int units = loader.getCarriedUnits();
         int cap = LoaderBucketController.BUCKET_CAPACITY;
         String matName = loader.getCarriedMaterialId() > 0 && loader.getCarriedMaterial() != null
                 ? loader.getCarriedMaterial().name().toUpperCase()
                 : "PUSTA";
         double m3 = (double) units / 512.0D;
-        extractor.text(font, String.format("Łyżka: §f%s §7(%d / %d u | %.2f m³)", matName, units, cap, m3), x, y + 46, 0xCCCCCC, true);
+        extractor.text(
+                font,
+                String.format("Urobek: %s   %d/%d u   %.2f m³", matName, units, cap, m3),
+                x,
+                y + 65,
+                TEXT_SECONDARY,
+                true
+        );
 
-        // Progress bar background & fill
-        int barW = 270;
-        int barH = 5;
-        int barY = y + 58;
-        extractor.fill(x, barY, x + barW, barY + barH, 0xFF333333);
+        int barW = 250;
+        int barH = 6;
+        int barY = y + 78;
         float ratio = Math.min(1.0F, (float) units / (float) cap);
-        int fillW = (int) (ratio * barW);
+        extractor.fill(x, barY, x + barW, barY + barH, BAR_BG);
+        int fillW = Math.round(ratio * barW);
         if (fillW > 0) {
-            int barColor = ratio >= 0.95F ? 0xFFFF4444 : (ratio >= 0.75F ? 0xFFFFBB00 : 0xFF44FF44);
-            extractor.fill(x, barY, x + fillW, barY + barH, barColor);
+            extractor.fill(x, barY, x + fillW, barY + barH, ratio >= 0.90F ? BAR_FULL : BAR_FILL);
         }
+        extractor.text(font, String.format("%.0f%%", ratio * 100.0F), x + barW + 8, barY - 2, TEXT_PRIMARY, true);
 
-        // Live Operating State (Scooping / Dumping)
-        String liveAction;
-        if (loader.isScooping()) {
-            liveAction = "§e§lŁADOWANIE MATERIAŁU";
-        } else if (loader.isDumping()) {
-            liveAction = "§6§lWYSYP Z ŁYŻKI";
-        } else {
-            liveAction = "§7GOTOWA";
-        }
-        extractor.text(font, "Stan: " + liveAction, x + 160, y + 11, 0xFFFFFF, true);
+        extractor.text(
+                font,
+                String.format(
+                        "Przegub: %.1f°   Pochylenie: %.1f°   Boczne: %.1f°",
+                        loader.getSteerAngle(),
+                        loader.getVehiclePitch(),
+                        loader.getVehicleRoll()
+                ),
+                x,
+                y + 91,
+                TEXT_SECONDARY,
+                true
+        );
+        extractor.text(
+                font,
+                "[W/S] Jazda   [A/D] Przegub   [↑/↓] Wysięgnik   [←/→] Łyżka",
+                x,
+                y + 102,
+                TEXT_MUTED,
+                true
+        );
     }
 }

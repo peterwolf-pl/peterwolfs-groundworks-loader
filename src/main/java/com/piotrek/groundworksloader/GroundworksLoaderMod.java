@@ -32,7 +32,6 @@ public class GroundworksLoaderMod implements ModInitializer {
         return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 
-    // ── Entity Registration ──────────────────────────────────────────
     public static final ResourceKey<EntityType<?>> LOADER_KEY =
             ResourceKey.create(Registries.ENTITY_TYPE, id("loader"));
 
@@ -45,14 +44,36 @@ public class GroundworksLoaderMod implements ModInitializer {
                     .build(LOADER_KEY)
     );
 
-    // ── Sound Registration ──────────────────────────────────────────
     public static final SoundEvent ENGINE_LOOP = Registry.register(
             BuiltInRegistries.SOUND_EVENT,
             id("engine_loop"),
-            SoundEvent.createFixedRangeEvent(id("engine_loop"), 48.0F)
+            SoundEvent.createFixedRangeEvent(id("engine_loop"), 14.0F)
     );
 
-    // ── Item Registration ────────────────────────────────────────────
+    public static final SoundEvent ENGINE_LOAD = Registry.register(
+            BuiltInRegistries.SOUND_EVENT,
+            id("engine_load"),
+            SoundEvent.createFixedRangeEvent(id("engine_load"), 14.0F)
+    );
+
+    public static final SoundEvent TRUCK_HORN_SHORT = Registry.register(
+            BuiltInRegistries.SOUND_EVENT,
+            id("truck_horn_short"),
+            SoundEvent.createFixedRangeEvent(id("truck_horn_short"), 64.0F)
+    );
+
+    public static final SoundEvent TRUCK_HORN_LONG = Registry.register(
+            BuiltInRegistries.SOUND_EVENT,
+            id("truck_horn_long"),
+            SoundEvent.createFixedRangeEvent(id("truck_horn_long"), 72.0F)
+    );
+
+    public static final SoundEvent TRUCK_HORN_LOOP = Registry.register(
+            BuiltInRegistries.SOUND_EVENT,
+            id("truck_horn_loop"),
+            SoundEvent.createFixedRangeEvent(id("truck_horn_loop"), 64.0F)
+    );
+
     public static final ResourceKey<Item> LOADER_ITEM_KEY =
             ResourceKey.create(Registries.ITEM, id("loader"));
 
@@ -71,7 +92,6 @@ public class GroundworksLoaderMod implements ModInitializer {
     public void onInitialize() {
         LOGGER.info("Initializing Peterwolf's Groundworks Loader for MC 26.3...");
 
-        // 1. Networking registration
         PayloadTypeRegistry.serverboundPlay().register(
                 LoaderInputPayload.TYPE, LoaderInputPayload.CODEC
         );
@@ -88,17 +108,16 @@ public class GroundworksLoaderMod implements ModInitializer {
                                     payload.boomLift(),
                                     payload.bucketTilt()
                             );
+                            loader.setHornInput(payload.hornActive());
                         }
                     });
                 }
         );
 
-        // 2. Command registration
         CommandRegistrationCallback.EVENT.register(
                 (dispatcher, registryAccess, environment) -> LoaderCommand.register(dispatcher)
         );
 
-        // 3. Creative Tab placement
         CreativeModeTabEvents.modifyOutputEvent(TOOLS_AND_UTILITIES_TAB).register(output -> {
             output.accept(LOADER_ITEM);
         });

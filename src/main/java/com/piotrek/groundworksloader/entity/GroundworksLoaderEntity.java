@@ -6,6 +6,9 @@ import com.piotrek.groundworksloader.GroundworksLoaderMod;
 import com.piotrek.groundworksloader.bucket.LoaderBucketController;
 import com.piotrek.groundworksloader.bucket.LoaderBucketController.BucketTickResult;
 import com.piotrek.groundworksloader.integration.groundworks.GroundworksLoaderAdapter;
+import com.piotrek.groundworksloader.vehicle.EngineSoundProfile;
+import com.piotrek.groundworksloader.vehicle.ExhaustPuffs;
+import com.piotrek.groundworksloader.vehicle.LoaderExhaustTransform;
 import com.piotrek.groundworksloader.vehicle.LoaderMovementController;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -67,6 +70,9 @@ public class GroundworksLoaderEntity extends Entity {
             SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> ENGINE_RUNNING =
             SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.BOOLEAN);
+    // Append new synced fields after the legacy loader schema to preserve accessor IDs.
+    private static final EntityDataAccessor<Boolean> HORN_HELD =
+            SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.BOOLEAN);
 
     // ── Subsystems ───────────────────────────────────────────────────
     private final LoaderMovementController movementController = new LoaderMovementController();
@@ -102,6 +108,7 @@ public class GroundworksLoaderEntity extends Entity {
         builder.define(IS_SCOOPING, false);
         builder.define(IS_DUMPING, false);
         builder.define(ENGINE_RUNNING, false);
+        builder.define(HORN_HELD, false);
     }
 
     public void setControlInputs(float throttle, float steer, float boomLift, float bucketTilt) {
@@ -112,11 +119,16 @@ public class GroundworksLoaderEntity extends Entity {
         this.inputFreshTicks = 5;
     }
 
+    public void setHornInput(boolean hornActive) {
+        this.entityData.set(HORN_HELD, hornActive && this.getControllingPassenger() != null);
+    }
+
     @Override
     public void tick() {
         super.tick();
 
         if (this.level().isClientSide()) {
+            spawnExhaustParticles();
             return;
         }
 
@@ -154,6 +166,9 @@ public class GroundworksLoaderEntity extends Entity {
 
         boolean hasDriver = driver != null;
         this.entityData.set(ENGINE_RUNNING, hasDriver);
+        if (!hasDriver) {
+            this.entityData.set(HORN_HELD, false);
+        }
 
         // 2. Physics & Motion simulation
         LoaderMovementController.StepResult moveRes =
@@ -239,6 +254,76 @@ public class GroundworksLoaderEntity extends Entity {
         this.entityData.set(VEHICLE_ROLL, this.movementController.vehicleRoll());
         this.entityData.set(IS_SCOOPING, bucketRes.isScooping());
         this.entityData.set(IS_DUMPING, bucketRes.isDumping());
+    }
+
+    private void spawnExhaustParticles() {
+        if (!this.isEngineRunning()) {
+            return;
+        }
+
+        boolean hydraulicActive = this.isScooping() || this.isDumping();
+        float load = Math.max(0.08F, EngineSoundProfile.machineLoad(this.getForwardSpeed(), hydraulicActive));
+        Vec3 exhaustPos = LoaderExhaustTransform.getExhaustWorldPosition(
+                this.position(),
+                this.getYRot(),
+                this.getVehiclePitch(),
+                this.getVehicleRoll()
+        );
+
+        int whitePuffs = ExhaustPuffs.whitePuffCount(load, this.tickCount);
+        if (whitePuffs > 0) {
+            float blend = (load - ExhaustPuffs.MIN_LOAD) / (ExhaustPuffs.MAX_LOAD - ExhaustPuffs.MIN_LOAD);
+            double spread = 0.004D + 0.010D * blend;
+            double rise = 0.010D + 0.012D * blend;
+            for (int i = 0; i < whitePuffs; i++) {
+                this.level().addParticle(
+                        ParticleTypes.WHITE_SMOKE,
+                        exhaustPos.x,
+                        exhaustPos.y + 0.08D,
+                        exhaustPos.z,
+                        (Math.random() - 0.5D) * spread,
+                        rise + Math.random() * 0.008D,
+                        (Math.random() - 0.5D) * spread
+                );
+            }
+        }
+
+        if (load > 0.30F) {
+            if (load >= 0.95F) {
+                this.level().addParticle(
+                        ParticleTypes.LARGE_SMOKE,
+                        exhaustPos.x, exhaustPos.y + 0.05D, exhaustPos.z,
+                        (Math.random() - 0.5D) * 0.03D,
+                        0.08D + Math.random() * 0.04D,
+                        (Math.random() - 0.5D) * 0.03D
+                );
+                this.level().addParticle(
+                        ParticleTypes.SMOKE,
+                        exhaustPos.x, exhaustPos.y + 0.05D, exhaustPos.z,
+                        (Math.random() - 0.5D) * 0.02D,
+                        0.06D,
+                        (Math.random() - 0.5D) * 0.02D
+                );
+            } else if (load > 0.60F) {
+                if (this.tickCount % 2 == 0) {
+                    this.level().addParticle(
+                            ParticleTypes.SMOKE,
+                            exhaustPos.x, exhaustPos.y + 0.05D, exhaustPos.z,
+                            (Math.random() - 0.5D) * 0.02D,
+                            0.05D + Math.random() * 0.02D,
+                            (Math.random() - 0.5D) * 0.02D
+                    );
+                }
+            } else if (this.tickCount % 4 == 0) {
+                this.level().addParticle(
+                        ParticleTypes.WHITE_SMOKE,
+                        exhaustPos.x, exhaustPos.y + 0.05D, exhaustPos.z,
+                        (Math.random() - 0.5D) * 0.01D,
+                        0.04D,
+                        (Math.random() - 0.5D) * 0.01D
+                );
+            }
+        }
     }
 
     private void spawnGranularParticles(ServerLevel serverLevel, Vec3 pos, GranularMaterial material) {
@@ -427,6 +512,10 @@ public class GroundworksLoaderEntity extends Entity {
 
     public boolean isEngineRunning() {
         return this.entityData.get(ENGINE_RUNNING);
+    }
+
+    public boolean isHornHeld() {
+        return this.entityData.get(HORN_HELD);
     }
 
     @Override

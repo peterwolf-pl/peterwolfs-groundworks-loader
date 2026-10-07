@@ -38,27 +38,36 @@ class LoaderMovementControllerTest {
     }
 
     @Test
-    @DisplayName("Steering left and right rotates articulation angle and self-centers")
-    void testSteeringAndCentering() {
+    @DisplayName("Stationary steering bends articulation without pivot-turning and holds its angle")
+    void testStationaryArticulationHoldAndNoPivotTurn() {
         LoaderMovementController controller = new LoaderMovementController();
 
-        // Steer left (A)
+        float lastYaw = 0.0F;
         for (int i = 0; i < 15; i++) {
-            controller.step(0.0F, -1.0F);
+            LoaderMovementController.StepResult result = controller.step(0.0F, -1.0F);
+            lastYaw = result.deltaYaw();
         }
+
         assertTrue(controller.steerAngle() < -30.0F);
+        assertEquals(0.0F, lastYaw, 1e-6F, "Stationary articulation must not rotate the loader");
 
-        // Release steer: self centers towards 0
-        for (int i = 0; i < 15; i++) {
-            controller.step(0.0F, 0.0F);
+        float heldAngle = controller.steerAngle();
+        for (int i = 0; i < 10; i++) {
+            LoaderMovementController.StepResult result = controller.step(0.0F, 0.0F);
+            assertEquals(0.0F, result.deltaYaw(), 1e-6F);
         }
-        assertEquals(0.0F, controller.steerAngle(), 0.1F);
+        assertEquals(heldAngle, controller.steerAngle(), 0.01F,
+                "Released steering must hold the articulation angle while stopped");
 
-        // Steer right (D)
-        for (int i = 0; i < 15; i++) {
-            controller.step(0.0F, 1.0F);
-        }
-        assertTrue(controller.steerAngle() > 30.0F);
+        // Selecting the opposite steering direction must immediately move the joint back.
+        controller.step(0.0F, 1.0F);
+        assertTrue(controller.steerAngle() > heldAngle);
+
+        // Starting to drive with neutral steering recenters the joint and permits yaw.
+        float angleBeforeDrive = controller.steerAngle();
+        LoaderMovementController.StepResult moving = controller.step(1.0F, 0.0F);
+        assertTrue(Math.abs(controller.steerAngle()) < Math.abs(angleBeforeDrive));
+        assertNotEquals(0.0F, moving.deltaYaw(), 1e-6F);
     }
 
     @Test
