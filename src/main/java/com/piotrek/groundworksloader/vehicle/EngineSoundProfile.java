@@ -13,10 +13,16 @@ public final class EngineSoundProfile {
 
     public record Mix(float volume, float pitch, float loadVolume, float loadPitch) {}
 
+    public static float machineLoad(float speed, boolean isHydraulicActive) {
+        float driveLoad = Math.min(1.0F, Math.abs(speed) / LoaderMovementController.MAX_FORWARD_SPEED);
+        float hydraulicLoad = isHydraulicActive ? 0.65F : 0.0F;
+        return Math.max(hydraulicLoad, driveLoad * 0.78F);
+    }
+
     public static Mix forLoaderState(float speed, boolean isHydraulicActive) {
         float driveLoad = Math.min(1.0F, Math.abs(speed) / LoaderMovementController.MAX_FORWARD_SPEED);
         float hydraulicLoad = isHydraulicActive ? 0.65F : 0.0F;
-        float load = Math.max(hydraulicLoad, driveLoad * 0.78F);
+        float load = machineLoad(speed, isHydraulicActive);
         float lug = hydraulicLoad * (1.0F - driveLoad);
 
         return new Mix(

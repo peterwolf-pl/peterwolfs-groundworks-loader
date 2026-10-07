@@ -72,12 +72,18 @@ public class LoaderMovementController {
         }
 
         // 2. Articulated Steering Dynamics
+        //
+        // A real articulated loader can bend its center joint while stationary, but
+        // that hydraulic articulation must not rotate the entire vehicle in place.
+        // While stopped and the steering key is released, keep the selected bend.
+        // Once the machine starts moving with neutral steering, let the joint return
+        // toward center. Pressing the opposite direction always moves the joint back.
+        boolean moving = Math.abs(forwardSpeed) > 0.01F;
         if (steer > 0.05F) {
             steerAngle = Math.min(MAX_STEER_ANGLE, steerAngle + (STEER_SPEED * steer));
         } else if (steer < -0.05F) {
             steerAngle = Math.max(-MAX_STEER_ANGLE, steerAngle + (STEER_SPEED * steer));
-        } else {
-            // Self-centering articulated joint
+        } else if (moving) {
             if (steerAngle > 0.0F) {
                 steerAngle = Math.max(0.0F, steerAngle - STEER_RECENTER);
             } else if (steerAngle < 0.0F) {
@@ -86,10 +92,15 @@ public class LoaderMovementController {
         }
 
         // 3. Angular Yaw Rate from Articulation
+        // No translation means no heading change. Yaw scales continuously from zero
+        // with wheel speed so there is no artificial pivot-turn at a standstill.
         float normalizedSteer = steerAngle / MAX_STEER_ANGLE;
-        float speedFactor = Math.abs(forwardSpeed) / MAX_FORWARD_SPEED;
-        float directionSign = forwardSpeed >= 0.0F ? 1.0F : -1.0F;
-        float deltaYaw = normalizedSteer * directionSign * (0.8F + (speedFactor * 3.6F));
+        float speedAbs = Math.abs(forwardSpeed);
+        float speedFactor = Mth.clamp(speedAbs / MAX_FORWARD_SPEED, 0.0F, 1.0F);
+        float directionSign = Math.signum(forwardSpeed);
+        float deltaYaw = speedAbs <= 0.01F
+                ? 0.0F
+                : normalizedSteer * directionSign * speedFactor * 4.4F;
 
         // 4. Wheel Rolling Rotation Animation (degrees)
         float circumference = 2.0F * (float) Math.PI * WHEEL_RADIUS_METERS;

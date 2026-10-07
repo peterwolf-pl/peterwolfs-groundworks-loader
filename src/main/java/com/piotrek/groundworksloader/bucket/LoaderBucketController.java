@@ -79,6 +79,27 @@ public class LoaderBucketController {
      * Computes the world-space positions along the bucket cutting edge (5 sample points).
      */
     public List<Vec3> getCuttingEdgePoints(Vec3 vehiclePos, float vehicleYaw, float vehiclePitch) {
+        return getCuttingEdgePoints(
+                vehiclePos,
+                vehicleYaw,
+                vehiclePitch,
+                this.boomAngle,
+                this.bucketAngle
+        );
+    }
+
+    /**
+     * Shared world-space cutting-edge transform used by both terrain interaction
+     * and the client HUD. Explicit angles allow the HUD to use synchronized entity
+     * data instead of a client-only controller copy.
+     */
+    public static List<Vec3> getCuttingEdgePoints(
+            Vec3 vehiclePos,
+            float vehicleYaw,
+            float vehiclePitch,
+            float boomAngle,
+            float bucketAngle
+    ) {
         float yawRad = (float) Math.toRadians(vehicleYaw);
         float pitchRad = (float) Math.toRadians(vehiclePitch);
 
@@ -96,7 +117,7 @@ public class LoaderBucketController {
         double bucketPivotY = armPivotY + (bRelY * cosB + bRelZ * sinB);
         double bucketPivotZ = armPivotZ + (-bRelY * sinB + bRelZ * cosB);
 
-        double tRelY = -0.28125D;
+        double tRelY = 0.20D;
         double tRelZ = 1.00D;
 
         double totalRad = boomRad + bucketRad;
