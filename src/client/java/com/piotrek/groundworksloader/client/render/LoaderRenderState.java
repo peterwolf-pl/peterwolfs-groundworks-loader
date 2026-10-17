@@ -19,7 +19,13 @@ public class LoaderRenderState extends EntityRenderState {
 
     public int carriedMaterialId;
     public int carriedUnits;
+    public int dirtUnits;
+    public int sandUnits;
+    public int gravelUnits;
+    public int cobblestoneUnits;
     public float fillRatio;
+    public float renderScale = 1.0F;
+    public boolean giantVariant;
 
     public boolean isScooping;
     public boolean isDumping;

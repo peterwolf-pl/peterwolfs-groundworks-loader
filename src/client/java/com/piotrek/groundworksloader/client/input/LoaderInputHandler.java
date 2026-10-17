@@ -21,33 +21,33 @@ public final class LoaderInputHandler {
         if (client.player == null) return;
 
         if (client.player.getVehicle() instanceof GroundworksLoaderEntity loader) {
-            boolean inGame = client.mouseHandler != null && client.mouseHandler.isMouseGrabbed();
+            boolean inGame = client.mouseHandler != null && client.mouseHandler.isMouseGrabbed() && client.getWindow() != null;
 
             boolean keyForward = (client.options.keyUp != null && client.options.keyUp.isDown())
                     || (client.player.input != null && client.player.input.keyPresses.forward())
-                    || (inGame && InputConstants.isKeyDown(InputConstants.KEY_W));
+                    || (inGame && InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_W));
             boolean keyBackward = (client.options.keyDown != null && client.options.keyDown.isDown())
                     || (client.player.input != null && client.player.input.keyPresses.backward())
-                    || (inGame && InputConstants.isKeyDown(InputConstants.KEY_S));
+                    || (inGame && InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_S));
             boolean keyLeft = (client.options.keyLeft != null && client.options.keyLeft.isDown())
                     || (client.player.input != null && client.player.input.keyPresses.left())
-                    || (inGame && InputConstants.isKeyDown(InputConstants.KEY_A));
+                    || (inGame && InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_A));
             boolean keyRight = (client.options.keyRight != null && client.options.keyRight.isDown())
                     || (client.player.input != null && client.player.input.keyPresses.right())
-                    || (inGame && InputConstants.isKeyDown(InputConstants.KEY_D));
+                    || (inGame && InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_D));
 
             boolean boomUp = (LoaderKeyBindings.KEY_BOOM_UP != null && LoaderKeyBindings.KEY_BOOM_UP.isDown())
-                    || (inGame && InputConstants.isKeyDown(InputConstants.KEY_UP));
+                    || (inGame && InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_UP));
             boolean boomDown = (LoaderKeyBindings.KEY_BOOM_DOWN != null && LoaderKeyBindings.KEY_BOOM_DOWN.isDown())
-                    || (inGame && InputConstants.isKeyDown(InputConstants.KEY_DOWN));
+                    || (inGame && InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_DOWN));
 
-            boolean bucketOpen = (LoaderKeyBindings.KEY_BUCKET_OPEN != null && LoaderKeyBindings.KEY_BUCKET_OPEN.isDown())
-                    || (inGame && InputConstants.isKeyDown(InputConstants.KEY_LEFT));
-            boolean bucketClose = (LoaderKeyBindings.KEY_BUCKET_CLOSE != null && LoaderKeyBindings.KEY_BUCKET_CLOSE.isDown())
-                    || (inGame && InputConstants.isKeyDown(InputConstants.KEY_RIGHT));
+            boolean bucketCurl = (LoaderKeyBindings.KEY_BUCKET_CURL != null && LoaderKeyBindings.KEY_BUCKET_CURL.isDown())
+                    || (inGame && InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_LEFT));
+            boolean bucketDump = (LoaderKeyBindings.KEY_BUCKET_DUMP != null && LoaderKeyBindings.KEY_BUCKET_DUMP.isDown())
+                    || (inGame && InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_RIGHT));
 
             boolean hornActive = (LoaderKeyBindings.KEY_HORN != null && LoaderKeyBindings.KEY_HORN.isDown())
-                    || (inGame && InputConstants.isKeyDown(InputConstants.KEY_C));
+                    || (inGame && InputConstants.isKeyDown(client.getWindow(), InputConstants.KEY_C));
 
             float throttle = 0.0F;
             float steer = 0.0F;
@@ -62,8 +62,8 @@ public final class LoaderInputHandler {
             if (boomUp) boomLift += 1.0F;
             if (boomDown) boomLift -= 1.0F;
 
-            if (bucketOpen) bucketTilt += 1.0F;
-            if (bucketClose) bucketTilt -= 1.0F;
+            if (bucketCurl) bucketTilt -= 1.0F;
+            if (bucketDump) bucketTilt += 1.0F;
 
             boolean changed = throttle != lastThrottle
                     || steer != lastSteer

@@ -1,12 +1,12 @@
 package com.piotrek.groundworksloader.item;
 
-import com.piotrek.groundworksloader.GroundworksLoaderMod;
 import com.piotrek.groundworksloader.entity.GroundworksLoaderEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -20,8 +20,11 @@ import net.minecraft.world.phys.Vec3;
  */
 public class LoaderItem extends Item {
 
-    public LoaderItem(Properties properties) {
+    private final EntityType<GroundworksLoaderEntity> entityType;
+
+    public LoaderItem(Properties properties, EntityType<GroundworksLoaderEntity> entityType) {
         super(properties);
+        this.entityType = entityType;
     }
 
     @Override
@@ -41,7 +44,7 @@ public class LoaderItem extends Item {
                 spawnPos.getZ() + 0.5D
         );
 
-        AABB bounds = GroundworksLoaderMod.LOADER.getDimensions().makeBoundingBox(spawnVec);
+        AABB bounds = entityType.getDimensions().makeBoundingBox(spawnVec);
         if (!level.noCollision(bounds)) {
             bounds = bounds.move(0.0D, 0.5D, 0.0D);
             if (!level.noCollision(bounds)) {
@@ -51,7 +54,7 @@ public class LoaderItem extends Item {
         }
 
         ServerLevel serverLevel = (ServerLevel) level;
-        GroundworksLoaderEntity loader = GroundworksLoaderMod.LOADER.create(
+        GroundworksLoaderEntity loader = entityType.create(
                 serverLevel,
                 EntitySpawnReason.SPAWN_ITEM_USE
         );

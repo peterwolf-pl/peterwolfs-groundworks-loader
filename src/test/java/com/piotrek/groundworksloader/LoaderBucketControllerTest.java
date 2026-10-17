@@ -48,6 +48,34 @@ class LoaderBucketControllerTest {
     }
 
     @Test
+    @DisplayName("Bucket stays level through boom travel and preserves a manual curl offset")
+    void testAutomaticBucketLeveling() {
+        LoaderBucketController controller = new LoaderBucketController();
+
+        controller.updateAngles(1.0F, 0.0F);
+        controller.updateAngles(1.0F, 0.0F);
+        assertEquals(controller.boomAngle(), controller.bucketAngle(), 0.001F,
+                "A horizontal bucket must remain horizontal while raising the boom");
+
+        controller.updateAngles(0.0F, -1.0F);
+        float curledOffset = controller.bucketAngle() - controller.boomAngle();
+        controller.updateAngles(1.0F, 0.0F);
+        assertEquals(curledOffset, controller.bucketAngle() - controller.boomAngle(), 0.001F,
+                "Manual curl must persist while self-leveling continues");
+    }
+
+    @Test
+    @DisplayName("Giant bucket exposes dump-truck capacity and 4.6 metre cutting edge")
+    void testGiantBucketSpecification() {
+        LoaderBucketController controller = new LoaderBucketController(7680, 4.6F, 1.65F);
+        List<Vec3> points = controller.getCuttingEdgePoints(Vec3.ZERO, 0.0F, 0.0F);
+
+        assertEquals(7680, controller.capacity());
+        assertEquals(4.6F, controller.bucketWidthMeters(), 0.001F);
+        assertEquals(4.6D, points.getFirst().distanceTo(points.getLast()), 0.15D);
+    }
+
+    @Test
     @DisplayName("Cutting edge produces 5 points spanning bucket width")
     void testCuttingEdgePoints() {
         LoaderBucketController controller = new LoaderBucketController();

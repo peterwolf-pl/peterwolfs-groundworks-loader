@@ -37,6 +37,23 @@ public final class LoaderCommand {
                                     return 0;
                                 })
                         )
+                        .then(Commands.literal("spawn_giant")
+                                .executes(ctx -> {
+                                    CommandSourceStack source = ctx.getSource();
+                                    ServerPlayer player = source.getPlayerOrException();
+                                    GroundworksLoaderEntity loader = GroundworksLoaderMod.GIANT_LOADER.create(
+                                            source.getLevel(), EntitySpawnReason.COMMAND
+                                    );
+                                    if (loader != null) {
+                                        loader.snapTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), 0.0F);
+                                        source.getLevel().addFreshEntity(loader);
+                                        player.startRiding(loader);
+                                        source.sendSuccess(() -> Component.literal("§a[Loader] Spawned and boarded giant wheel loader."), true);
+                                        return 1;
+                                    }
+                                    return 0;
+                                })
+                        )
                         .then(Commands.literal("clear")
                                 .executes(ctx -> {
                                     CommandSourceStack source = ctx.getSource();

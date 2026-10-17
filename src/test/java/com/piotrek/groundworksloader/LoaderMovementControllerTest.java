@@ -38,8 +38,8 @@ class LoaderMovementControllerTest {
     }
 
     @Test
-    @DisplayName("Steering left and right rotates articulation angle and self-centers")
-    void testSteeringAndCentering() {
+    @DisplayName("Steering left and right rotates articulation angle and holds articulated position")
+    void testSteeringAndHolding() {
         LoaderMovementController controller = new LoaderMovementController();
 
         // Steer left (A)
@@ -48,17 +48,37 @@ class LoaderMovementControllerTest {
         }
         assertTrue(controller.steerAngle() < -30.0F);
 
-        // Release steer: self centers towards 0
+        // Release steer: holds articulated position (does NOT self-center)
+        float heldAngle = controller.steerAngle();
         for (int i = 0; i < 15; i++) {
             controller.step(0.0F, 0.0F);
         }
-        assertEquals(0.0F, controller.steerAngle(), 0.1F);
+        assertEquals(heldAngle, controller.steerAngle(), 1e-4F);
 
-        // Steer right (D)
-        for (int i = 0; i < 15; i++) {
+        // Steer right (D) back to center and past
+        for (int i = 0; i < 25; i++) {
             controller.step(0.0F, 1.0F);
         }
         assertTrue(controller.steerAngle() > 30.0F);
+    }
+
+    @Test
+    @DisplayName("Stationary loader does not spin in place when steering")
+    void testNoSpinInPlaceWhenStationary() {
+        LoaderMovementController controller = new LoaderMovementController();
+
+        // Steer hard left while stopped: joint articulates but deltaYaw must be 0
+        for (int i = 0; i < 15; i++) {
+            LoaderMovementController.StepResult res = controller.step(0.0F, -1.0F);
+            assertEquals(0.0F, res.deltaYaw(), 1e-4F);
+        }
+
+        assertTrue(controller.steerAngle() < -30.0F);
+
+        // Now apply forward throttle: vehicle should turn along an arc
+        LoaderMovementController.StepResult movingRes = controller.step(1.0F, 0.0F);
+        assertTrue(movingRes.forwardSpeed() > 0.0F);
+        assertTrue(movingRes.deltaYaw() < 0.0F, "Turning left while moving forward should produce negative deltaYaw");
     }
 
     @Test

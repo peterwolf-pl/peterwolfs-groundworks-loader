@@ -3,10 +3,10 @@ package com.piotrek.groundworksloader.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.piotrek.groundworksloader.GroundworksLoaderMod;
-import com.piotrek.groundworksloader.bucket.LoaderBucketController;
 import com.piotrek.groundworksloader.client.GroundworksLoaderClient;
 import com.piotrek.groundworksloader.client.model.LoaderModel;
 import com.piotrek.groundworksloader.entity.GroundworksLoaderEntity;
+import com.piotrek.groundworksloader.entity.LoaderVariant;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.AABB;
 
 /**
  * 26.3 entity renderer for the 4-wheel industrial wheel loader.
@@ -21,12 +22,15 @@ import net.minecraft.resources.Identifier;
 public class LoaderRenderer extends EntityRenderer<GroundworksLoaderEntity, LoaderRenderState> {
 
     public static final Identifier TEXTURE = GroundworksLoaderMod.id("textures/entity/loader.png");
+    public static final Identifier GIANT_TEXTURE = GroundworksLoaderMod.id("textures/entity/giant_loader.png");
 
-    private final LoaderModel model;
+    private final LoaderModel standardModel;
+    private final LoaderModel giantModel;
 
     public LoaderRenderer(EntityRendererProvider.Context context) {
         super(context);
-        this.model = new LoaderModel(context.bakeLayer(GroundworksLoaderClient.LOADER_LAYER));
+        this.standardModel = new LoaderModel(context.bakeLayer(GroundworksLoaderClient.LOADER_LAYER));
+        this.giantModel = new LoaderModel(context.bakeLayer(GroundworksLoaderClient.GIANT_LOADER_LAYER));
         this.shadowRadius = 1.9F;
     }
 
@@ -51,7 +55,13 @@ public class LoaderRenderer extends EntityRenderer<GroundworksLoaderEntity, Load
 
         state.carriedMaterialId = entity.getCarriedMaterialId();
         state.carriedUnits = entity.getCarriedUnits();
-        state.fillRatio = (float) entity.getCarriedUnits() / (float) LoaderBucketController.BUCKET_CAPACITY;
+        state.dirtUnits = entity.getDirtUnits();
+        state.sandUnits = entity.getSandUnits();
+        state.gravelUnits = entity.getGravelUnits();
+        state.cobblestoneUnits = entity.getCobblestoneUnits();
+        state.fillRatio = (float) entity.getCarriedUnits() / (float) entity.capacity();
+        state.renderScale = entity.renderScale();
+        state.giantVariant = entity.variant() == LoaderVariant.GIANT;
 
         state.isScooping = entity.isScooping();
         state.isDumping = entity.isDumping();
@@ -62,35 +72,51 @@ public class LoaderRenderer extends EntityRenderer<GroundworksLoaderEntity, Load
     }
 
     @Override
+    protected AABB getBoundingBoxForCulling(GroundworksLoaderEntity entity) {
+        AABB bounds = super.getBoundingBoxForCulling(entity);
+        return entity.variant() == LoaderVariant.GIANT
+                ? bounds.inflate(4.5D, 3.0D, 4.5D)
+                : bounds;
+    }
+
+    @Override
+    protected float getShadowRadius(LoaderRenderState state) {
+        return state.giantVariant ? 3.2F : super.getShadowRadius(state);
+    }
+
+    @Override
     public void submit(LoaderRenderState state, PoseStack stack, SubmitNodeCollector collector, CameraRenderState camera) {
         stack.pushPose();
 
         // 1. Vehicle heading (facing where rear frame points)
-        stack.rotateDegrees(Axis.YP, -state.baseYaw);
+        stack.mulPose(Axis.YP.rotationDegrees(-state.baseYaw));
 
         // 2. Ground pitch & roll
         if (Math.abs(state.basePitch) > 0.01F) {
-            stack.rotateDegrees(Axis.XP, state.basePitch);
+            stack.mulPose(Axis.XP.rotationDegrees(state.basePitch));
         }
         if (Math.abs(state.baseRoll) > 0.01F) {
-            stack.rotateDegrees(Axis.ZP, state.baseRoll);
+            stack.mulPose(Axis.ZP.rotationDegrees(state.baseRoll));
         }
 
-        // Standard Minecraft entity model coordinate transform
-        stack.scale(-1.0F, -1.0F, 1.0F);
+        // Standard Minecraft entity model transform, enlarged for the giant variant.
+        stack.scale(-state.renderScale, -state.renderScale, state.renderScale);
         stack.translate(0.0F, -1.5F, 0.0F);
 
-        this.model.setupAnim(state);
+        LoaderModel model = state.giantVariant ? this.giantModel : this.standardModel;
+        Identifier texture = state.giantVariant ? GIANT_TEXTURE : TEXTURE;
+        model.setupAnim(state);
 
-        // Render full model with cutout render type
+        // Render full model with the variant's own texture and geometry.
         collector.submitModel(
-                this.model,
+                model,
                 state,
                 stack,
-                RenderTypes.entityCutout(TEXTURE),
+                RenderTypes.entityCutout(texture),
                 state.lightCoords,
                 OverlayTexture.NO_OVERLAY,
-                state.outlineColor
+                state.outlineColor,
+                null
         );
 
         // Render carried material as a generated loose-material surface using the

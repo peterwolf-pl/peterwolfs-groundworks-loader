@@ -1,7 +1,9 @@
 package com.piotrek.groundworksloader.integration.groundworks;
 
 import com.piotrek.groundworks.api.excavation.ExcavationResult;
+import com.piotrek.groundworks.api.material.GranularComposition;
 import com.piotrek.groundworks.api.material.GranularMaterial;
+import com.piotrek.groundworks.api.material.GranularMaterialRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -60,6 +62,21 @@ public interface IGranularTerrainAccess {
             int units
     ) {
         return ContainerTransferResult.NONE;
+    }
+
+    default ContainerTransferResult transferToWorldContainer(
+            Vec3 lip,
+            GranularComposition composition,
+            int units
+    ) {
+        if (composition == null || composition.isEmpty() || units <= 0) {
+            return ContainerTransferResult.NONE;
+        }
+        return transferToWorldContainer(
+                lip,
+                GranularMaterialRegistry.byId(composition.dominantMaterialId()),
+                units
+        );
     }
 
     record ContainerTransferResult(

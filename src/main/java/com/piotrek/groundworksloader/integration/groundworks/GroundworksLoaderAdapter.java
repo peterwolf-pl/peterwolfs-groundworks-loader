@@ -5,6 +5,7 @@ import com.piotrek.groundworks.api.container.GranularContainerTransferApi;
 import com.piotrek.groundworks.api.container.IWorldGranularContainer;
 import com.piotrek.groundworks.api.deposit.DepositResult;
 import com.piotrek.groundworks.api.excavation.ExcavationResult;
+import com.piotrek.groundworks.api.material.GranularComposition;
 import com.piotrek.groundworks.api.material.GranularMaterial;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -135,6 +136,41 @@ public class GroundworksLoaderAdapter implements IGranularTerrainAccess {
                 lip,
                 material,
                 units
+        );
+
+        return new ContainerTransferResult(
+                true,
+                Math.clamp(consumed, 0, units)
+        );
+    }
+
+    @Override
+    public ContainerTransferResult transferToWorldContainer(
+            Vec3 lip,
+            GranularComposition composition,
+            int units
+    ) {
+        if (units <= 0 || composition == null || composition.isEmpty()) {
+            return ContainerTransferResult.NONE;
+        }
+
+        IWorldGranularContainer receiver =
+                GranularContainerTransferApi.findReceiver(
+                        level,
+                        lip,
+                        source,
+                        4.0D
+                );
+
+        if (receiver == null) {
+            return ContainerTransferResult.NONE;
+        }
+
+        GranularComposition outgoing = composition.copy().extractProportional(units);
+        int consumed = receiver.receiveCompositionAt(
+                level,
+                lip,
+                outgoing
         );
 
         return new ContainerTransferResult(

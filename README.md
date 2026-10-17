@@ -12,6 +12,13 @@ Model ładowarki został zaprojektowany z dbałością o detale na podstawie ref
 - **Wysięgnik i kinematyka Z-Bar**: podwójne wygięte ramiona podnoszące z poprzecznicą wzmacniającą, siłowniki podnoszenia oraz centralna dźwignia kołyskowa Z-bar z siłownikiem wywrotu i łącznikiem łyżki.
 - **Ciężka łyżka załadunkowa**: szerokość 2.8m (zakrywa ślad kół), profil łyżki z 6 kutymi zębami krawędzi natarcia, noże boczne, płyty ślizgowe od spodu i daszek przeciwsypowy. Urobek jest renderowany jako osobny, nieregularny mesh usypanego materiału, a nie prostopadłościan.
 
+## Dwa warianty ładowarki
+
+- **Standardowa** — łyżka 2.8m i pojemność 2048 jednostek (4m³).
+- **Gigantyczna** — model powiększony 1.65×, łyżka 4.6m i pojemność 7680 jednostek (15m³), czyli pełna skrzynia wywrotki Groundworks za jednym razem.
+
+Gigantyczną ładowarkę można postawić z osobnego itemu albo utworzyć komendą `/loader spawn_giant`.
+
 ---
 
 ## 🎮 Sterowanie
@@ -34,8 +41,9 @@ Model ładowarki został zaprojektowany z dbałością o detale na podstawie ref
 ## 🧱 Integracja z Peterwolf's Groundworks
 
 - **Nabieranie gruntu**: gdy łyżka jest opuszczona do poziomu gruntu lub zagłębiona, a ładowarka jedzie do przodu na hałdę materiału obsługiwanego przez Groundworks, krawędź tnąca skrawa mikrowoksele i ładuje je do łyżki.
-- **Transport**: zamknięta łyżka (Strzałka w lewo) bezpiecznie przewozi urobek bez gubienia materiału.
-- **Wysyp grawitacyjny**: po przechyleniu łyżki w dół (Strzałka w prawo powyżej 18°) urobek wysypuje się strugą w dół na ziemię pod krawędzią łyżki z cząsteczkami i dźwiękiem sypania.
+- **Samopoziomowanie**: podczas podnoszenia i opuszczania wysięgnika łyżka zachowuje ustawiony kąt. Operator zmienia go niezależnie strzałkami w lewo i w prawo.
+- **Transport**: zamknięta łyżka (Strzałka w lewo) bezpiecznie przewozi urobek bez gubienia materiału. Podniesienie pełnej, poziomej i niezamkniętej łyżki wysypuje dokładnie 1/3 ładunku, dlatego po wbiciu się w hałdę należy najpierw zamknąć łyżkę.
+- **Wysyp grawitacyjny**: po przechyleniu łyżki w dół (Strzałka w prawo powyżej 15°) urobek wysypuje się strugą w dół na ziemię pod krawędzią łyżki z cząsteczkami i dźwiękiem sypania.
 - **100% zachowanie objętości**: każda jednostka pobrana z gruntu trafia do łyżki, a każda jednostka wysypana trafia do terenu.
 - **Uniwersalna wizualizacja materiałów**: loader nie ma już osobnych modeli/tekstur dla dirt, sand i gravel. Mesh zawartości łyżki pobiera teksturę z `GranularMaterial.sourceBlock()`, więc cobblestone i kolejne materiały Groundworks nie wymagają dopisywania kolejnego wariantu w modelu ładowarki.
 - **Naturalny kształt urobku**: wraz z napełnianiem rośnie zarówno wysokość, jak i powierzchnia zajmowana przez materiał w łyżce. Górna powierzchnia jest profilowana i segmentowana, dzięki czemu urobek nie wygląda jak prostopadłościan.
