@@ -27,7 +27,6 @@ public class LoaderMovementController {
 
     public static final float MAX_STEER_ANGLE = 38.0F;
     public static final float STEER_SPEED = 4.2F;
-    public static final float STEER_RECENTER = 3.2F;
 
     public static final float WHEEL_RADIUS_METERS = 0.6875F; // 11 model units
     public static final double FRONT_AXLE_OFFSET = 1.0D;     // Front axle 1.0m ahead of center (Z = +16 units)
@@ -72,24 +71,24 @@ public class LoaderMovementController {
         }
 
         // 2. Articulated Steering Dynamics
+        // Dual-acting hydraulic steering cylinders: operator can articulate the frame
+        // from lock to lock even while stationary, and the joint stays held in its
+        // articulated angle without auto-centering (hydraulic lock).
         if (steer > 0.05F) {
             steerAngle = Math.min(MAX_STEER_ANGLE, steerAngle + (STEER_SPEED * steer));
         } else if (steer < -0.05F) {
             steerAngle = Math.max(-MAX_STEER_ANGLE, steerAngle + (STEER_SPEED * steer));
-        } else {
-            // Self-centering articulated joint
-            if (steerAngle > 0.0F) {
-                steerAngle = Math.max(0.0F, steerAngle - STEER_RECENTER);
-            } else if (steerAngle < 0.0F) {
-                steerAngle = Math.min(0.0F, steerAngle + STEER_RECENTER);
-            }
         }
 
-        // 3. Angular Yaw Rate from Articulation
-        float normalizedSteer = steerAngle / MAX_STEER_ANGLE;
-        float speedFactor = Math.abs(forwardSpeed) / MAX_FORWARD_SPEED;
-        float directionSign = forwardSpeed >= 0.0F ? 1.0F : -1.0F;
-        float deltaYaw = normalizedSteer * directionSign * (0.8F + (speedFactor * 3.6F));
+        // 3. Angular Yaw Rate from Articulation Kinematics
+        // A stationary articulated machine can bend its joint, but cannot spin its body in place.
+        // Yaw turning rate only occurs as the wheels roll forward or backward through the articulated angle.
+        float deltaYaw = 0.0F;
+        if (Math.abs(forwardSpeed) > 0.001F) {
+            float steerRad = (float) Math.toRadians(steerAngle);
+            // Bicycle/articulated kinematics: ds / L * sin(steer) * (180 / PI)
+            deltaYaw = (forwardSpeed / (float) WHEELBASE) * (float) Math.sin(steerRad) * (180.0F / (float) Math.PI) * 1.4F;
+        }
 
         // 4. Wheel Rolling Rotation Animation (degrees)
         float circumference = 2.0F * (float) Math.PI * WHEEL_RADIUS_METERS;

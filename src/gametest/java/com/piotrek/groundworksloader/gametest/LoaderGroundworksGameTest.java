@@ -87,7 +87,7 @@ public final class LoaderGroundworksGameTest implements FabricClientGameTest {
             throw new AssertionError(
                     "Swept production loader bucket did not excavate real Groundworks terrain");
         }
-        if (scoop.unitsExcavated() > 160) {
+        if (scoop.unitsExcavated() > LoaderBucketController.MAX_EXCAVATION_PER_TICK) {
             throw new AssertionError(
                     "Loader excavated more than the swept per-tick volume cap: "
                             + scoop.unitsExcavated());
@@ -123,7 +123,7 @@ public final class LoaderGroundworksGameTest implements FabricClientGameTest {
         // Now verify the Excavator-style gravity surface search using real world
         // blocks: high bucket lip, solid floor several blocks below.
         bucket.setBoomAngle(45.0F);
-        bucket.setBucketAngle(40.0F);
+        bucket.setBucketAngle(70.0F);
         bucket.resetSweepHistory();
 
         Vec3 dumpLip = bucket.getCuttingEdgePoints(

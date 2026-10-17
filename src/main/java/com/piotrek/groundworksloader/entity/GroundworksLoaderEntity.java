@@ -1,5 +1,7 @@
 package com.piotrek.groundworksloader.entity;
 
+import com.piotrek.groundworks.api.container.IGranularContainer;
+import com.piotrek.groundworks.api.material.GranularComposition;
 import com.piotrek.groundworks.api.material.GranularMaterial;
 import com.piotrek.groundworks.api.material.GranularMaterialRegistry;
 import com.piotrek.groundworksloader.GroundworksLoaderMod;
@@ -7,6 +9,7 @@ import com.piotrek.groundworksloader.bucket.LoaderBucketController;
 import com.piotrek.groundworksloader.bucket.LoaderBucketController.BucketTickResult;
 import com.piotrek.groundworksloader.integration.groundworks.GroundworksLoaderAdapter;
 import com.piotrek.groundworksloader.vehicle.LoaderMovementController;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -24,10 +27,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.InterpolationHandler;
-import net.minecraft.world.entity.LinearInterpolationHandler;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -37,10 +40,13 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * Server-authoritative 4-wheel industrial wheel loader vehicle entity.
  */
-public class GroundworksLoaderEntity extends Entity {
+public class GroundworksLoaderEntity extends Entity implements IGranularContainer {
+    private final InterpolationHandler interpolation = new InterpolationHandler(this, 3);
 
     // ── Synched Entity Data ───────────────────────────────────────────
     private static final EntityDataAccessor<Float> BOOM_ANGLE =
@@ -71,9 +77,19 @@ public class GroundworksLoaderEntity extends Entity {
     private static final EntityDataAccessor<Boolean> HORN_HELD =
             SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.BOOLEAN);
 
+    private static final EntityDataAccessor<Integer> DIRT_UNITS =
+            SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> SAND_UNITS =
+            SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> GRAVEL_UNITS =
+            SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> COBBLESTONE_UNITS =
+            SynchedEntityData.defineId(GroundworksLoaderEntity.class, EntityDataSerializers.INT);
+
     // ── Subsystems ───────────────────────────────────────────────────
-    private final LoaderMovementController movementController = new LoaderMovementController();
-    private final LoaderBucketController bucketController = new LoaderBucketController();
+    private final LoaderVariant variant;
+    private final LoaderMovementController movementController;
+    private final LoaderBucketController bucketController;
 
     // Operator input buffer
     private float inputThrottle;
@@ -83,12 +99,20 @@ public class GroundworksLoaderEntity extends Entity {
     private int inputFreshTicks;
 
     public GroundworksLoaderEntity(EntityType<?> type, Level level) {
+        this(type, level, LoaderVariant.STANDARD);
+    }
+
+    public GroundworksLoaderEntity(EntityType<?> type, Level level, LoaderVariant variant) {
         super(type, level);
+        this.variant = variant;
+        this.movementController = new LoaderMovementController();
+        this.bucketController = new LoaderBucketController(
+                variant.bucketCapacity(), variant.bucketWidthMeters(), variant.scale());
     }
 
     @Override
-    protected InterpolationHandler createInterpolationHandler() {
-        return LinearInterpolationHandler.create(this, 3);
+    public InterpolationHandler getInterpolation() {
+        return interpolation;
     }
 
     @Override
@@ -106,6 +130,10 @@ public class GroundworksLoaderEntity extends Entity {
         builder.define(IS_DUMPING, false);
         builder.define(ENGINE_RUNNING, false);
         builder.define(HORN_HELD, false);
+        builder.define(DIRT_UNITS, 0);
+        builder.define(SAND_UNITS, 0);
+        builder.define(GRAVEL_UNITS, 0);
+        builder.define(COBBLESTONE_UNITS, 0);
     }
 
     public void setControlInputs(float throttle, float steer, float boomLift, float bucketTilt) {
@@ -231,7 +259,21 @@ public class GroundworksLoaderEntity extends Entity {
         }
 
         if (bucketRes.isDumping() && (this.tickCount % 2 == 0)) {
-            spawnGranularParticles(serverLevel, bucketRes.lipWorldCenter(), bucketRes.carriedMaterialAfter());
+            GranularMaterial dumpMat = bucketRes.carriedMaterialAfter();
+            if (dumpMat == GranularMaterial.EMPTY) {
+                dumpMat = GranularMaterialRegistry.DIRT;
+            }
+            if (!bucketRes.affectedPositions().isEmpty()) {
+                for (BlockPos affPos : bucketRes.affectedPositions()) {
+                    spawnGranularParticles(
+                            serverLevel,
+                            Vec3.atCenterOf(affPos).add(0.0D, 0.5D, 0.0D),
+                            dumpMat
+                    );
+                }
+            } else {
+                spawnGranularParticles(serverLevel, bucketRes.lipWorldCenter(), dumpMat);
+            }
             if (this.tickCount % 5 == 0) {
                 serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(),
                         SoundEvents.GRAVEL_PLACE, SoundSource.BLOCKS, 0.8F, 1.0F);
@@ -244,18 +286,29 @@ public class GroundworksLoaderEntity extends Entity {
         this.entityData.set(STEER_ANGLE, moveRes.steerAngle());
         this.entityData.set(FORWARD_SPEED, currentSpeed);
         this.entityData.set(WHEEL_ROTATION, moveRes.wheelRotation());
-        this.entityData.set(CARRIED_UNITS, bucketRes.carriedUnitsAfter());
-        this.entityData.set(CARRIED_MATERIAL_ID, bucketRes.carriedMaterialAfter().id());
         this.entityData.set(VEHICLE_PITCH, this.movementController.vehiclePitch());
         this.entityData.set(VEHICLE_ROLL, this.movementController.vehicleRoll());
         this.entityData.set(IS_SCOOPING, bucketRes.isScooping());
         this.entityData.set(IS_DUMPING, bucketRes.isDumping());
+        syncLoadData();
+    }
+
+    private void syncLoadData() {
+        this.entityData.set(CARRIED_UNITS, this.bucketController.carriedUnits());
+        this.entityData.set(CARRIED_MATERIAL_ID, this.bucketController.carriedMaterial().id());
+        this.entityData.set(DIRT_UNITS, this.bucketController.composition().unitsOf(GranularMaterialRegistry.DIRT));
+        this.entityData.set(SAND_UNITS, this.bucketController.composition().unitsOf(GranularMaterialRegistry.SAND));
+        this.entityData.set(GRAVEL_UNITS, this.bucketController.composition().unitsOf(GranularMaterialRegistry.GRAVEL));
+        this.entityData.set(COBBLESTONE_UNITS, this.bucketController.composition().unitsOf(GranularMaterialRegistry.COBBLESTONE));
     }
 
     private void spawnGranularParticles(ServerLevel serverLevel, Vec3 pos, GranularMaterial material) {
+        var block = material != null && material.sourceBlock() != null
+                ? material.sourceBlock()
+                : (material != null && material.id() != 0 ? Blocks.DIRT : Blocks.GRAVEL);
         BlockParticleOption particle = new BlockParticleOption(
                 ParticleTypes.BLOCK,
-                material != null && material.id() != 0 ? Blocks.DIRT.defaultBlockState() : Blocks.GRAVEL.defaultBlockState()
+                block.defaultBlockState()
         );
         serverLevel.sendParticles(
                 particle,
@@ -272,12 +325,12 @@ public class GroundworksLoaderEntity extends Entity {
     }
 
     @Override
-    public InteractionResult interact(Player player, InteractionHand hand, Vec3 location) {
+    public InteractionResult interact(Player player, InteractionHand hand) {
         // Shift + Right-Click with empty hand: retrieve / dismantle loader into inventory
         if (player.isSecondaryUseActive() && player.getItemInHand(hand).isEmpty()) {
             if (!this.level().isClientSide() && this.getPassengers().isEmpty()) {
                 if (!player.getAbilities().instabuild) {
-                    player.getInventory().add(new ItemStack(GroundworksLoaderMod.LOADER_ITEM));
+                    player.getInventory().add(new ItemStack(deploymentItem()));
                 }
                 this.level().playSound(
                         null, this.getX(), this.getY(), this.getZ(),
@@ -313,16 +366,16 @@ public class GroundworksLoaderEntity extends Entity {
         Vec3 forward = new Vec3(-Math.sin(yawRad), 0.0D, Math.cos(yawRad));
         Vec3 up = new Vec3(0.0D, 1.0D, 0.0D);
 
-        // Inside cabin: slightly behind center, 1.45m elevated
-        return forward.scale(-0.10D).add(up.scale(1.45D));
+        // Keep the operator in the same model-space cab position for both sizes.
+        return forward.scale(-0.10D * variant.scale()).add(up.scale(1.45D * variant.scale()));
     }
 
     @Override
     public Vec3 getDismountLocationForPassenger(LivingEntity passenger) {
         double yawRad = Math.toRadians(this.getYRot());
         Vec3 left = new Vec3(-Math.cos(yawRad), 0.0D, -Math.sin(yawRad));
-        // Safe exit next to side boarding ladder
-        return this.position().add(left.scale(2.4D)).add(0.0D, 0.20D, 0.0D);
+        // Safe exit next to side boarding ladder.
+        return this.position().add(left.scale(2.4D * variant.scale())).add(0.0D, 0.20D, 0.0D);
     }
 
     @Override
@@ -338,7 +391,7 @@ public class GroundworksLoaderEntity extends Entity {
 
         if (source.getEntity() instanceof Player player) {
             if (!player.getAbilities().instabuild) {
-                this.spawnAtLocation(level, GroundworksLoaderMod.LOADER_ITEM);
+                this.spawnAtLocation(level, deploymentItem());
             }
             this.discard();
             return true;
@@ -352,21 +405,23 @@ public class GroundworksLoaderEntity extends Entity {
         LoaderState state = LoaderState.load(input);
         this.bucketController.setBoomAngle(state.boomAngle());
         this.bucketController.setBucketAngle(state.bucketAngle());
-        this.bucketController.setCarriedUnits(state.carriedUnits());
-        this.bucketController.setCarriedMaterial(GranularMaterialRegistry.byId(state.carriedMaterialId()));
+        this.bucketController.setMaterialUnits(state.materialUnits());
+        if (this.bucketController.carriedUnits() == 0 && state.carriedUnits() > 0) {
+            this.bucketController.setCarriedUnits(state.carriedUnits());
+            this.bucketController.setCarriedMaterial(GranularMaterialRegistry.byId(state.carriedMaterialId()));
+        }
 
         this.movementController.setForwardSpeed(state.forwardSpeed());
         this.movementController.setSteerAngle(state.steerAngle());
         this.movementController.setWheelRotation(state.wheelRotation());
         this.movementController.setOrientation(state.vehiclePitch(), state.vehicleRoll());
 
+        syncLoadData();
         this.entityData.set(BOOM_ANGLE, state.boomAngle());
         this.entityData.set(BUCKET_ANGLE, state.bucketAngle());
         this.entityData.set(STEER_ANGLE, state.steerAngle());
         this.entityData.set(FORWARD_SPEED, state.forwardSpeed());
         this.entityData.set(WHEEL_ROTATION, state.wheelRotation());
-        this.entityData.set(CARRIED_UNITS, state.carriedUnits());
-        this.entityData.set(CARRIED_MATERIAL_ID, state.carriedMaterialId());
         this.entityData.set(VEHICLE_PITCH, state.vehiclePitch());
         this.entityData.set(VEHICLE_ROLL, state.vehicleRoll());
     }
@@ -382,12 +437,81 @@ public class GroundworksLoaderEntity extends Entity {
                 this.bucketController.carriedUnits(),
                 this.bucketController.carriedMaterial() != null ? this.bucketController.carriedMaterial().id() : 0,
                 this.movementController.vehiclePitch(),
-                this.movementController.vehicleRoll()
+                this.movementController.vehicleRoll(),
+                this.bucketController.composition().toArray()
         );
         state.save(output);
     }
 
+    // ── IGranularContainer Implementation ───────────────────────────
+    @Override
+    public int capacity() {
+        return this.bucketController.capacity();
+    }
+
+    @Override
+    public int storedUnits() {
+        return this.bucketController.carriedUnits();
+    }
+
+    @Override
+    public GranularMaterial storedMaterial() {
+        return this.bucketController.carriedMaterial();
+    }
+
+    @Override
+    public GranularComposition storedComposition() {
+        return this.bucketController.composition().copy();
+    }
+
+    @Override
+    public int acceptMaterial(GranularMaterial material, int units) {
+        int accepted = this.bucketController.acceptMaterial(material, units);
+        syncLoadData();
+        return accepted;
+    }
+
+    @Override
+    public int acceptComposition(GranularComposition composition) {
+        int accepted = this.bucketController.acceptComposition(composition);
+        syncLoadData();
+        return accepted;
+    }
+
+    @Override
+    public int extractMaterial(int maxUnits) {
+        int extracted = this.bucketController.extractMaterial(maxUnits);
+        syncLoadData();
+        return extracted;
+    }
+
+    @Override
+    public GranularComposition extractComposition(int maxUnits) {
+        GranularComposition extracted = this.bucketController.extractComposition(maxUnits);
+        syncLoadData();
+        return extracted;
+    }
+
     // ── Getters for Render & Telemetry ───────────────────────────────
+    public LoaderVariant variant() {
+        return variant;
+    }
+
+    public float renderScale() {
+        return variant.scale();
+    }
+
+    public List<Vec3> getCuttingEdgePoints() {
+        return bucketController.getCuttingEdgePoints(
+                this.position(), this.getYRot(), getVehiclePitch());
+    }
+
+    private Item deploymentItem() {
+        return variant == LoaderVariant.GIANT
+                ? GroundworksLoaderMod.GIANT_LOADER_ITEM
+                : GroundworksLoaderMod.LOADER_ITEM;
+    }
+
     public float getBoomAngle() {
         return this.entityData.get(BOOM_ANGLE);
     }
@@ -418,6 +542,33 @@ public class GroundworksLoaderEntity extends Entity {
 
     public GranularMaterial getCarriedMaterial() {
         return GranularMaterialRegistry.byId(getCarriedMaterialId());
+    }
+
+    public int getDirtUnits() {
+        return this.entityData.get(DIRT_UNITS);
+    }
+
+    public int getSandUnits() {
+        return this.entityData.get(SAND_UNITS);
+    }
+
+    public int getGravelUnits() {
+        return this.entityData.get(GRAVEL_UNITS);
+    }
+
+    public int getCobblestoneUnits() {
+        return this.entityData.get(COBBLESTONE_UNITS);
+    }
+
+    public boolean isCarriedPure() {
+        int total = getCarriedUnits();
+        if (total <= 0) return true;
+        int nonZero = 0;
+        if (getDirtUnits() > 0) nonZero++;
+        if (getSandUnits() > 0) nonZero++;
+        if (getGravelUnits() > 0) nonZero++;
+        if (getCobblestoneUnits() > 0) nonZero++;
+        return nonZero <= 1;
     }
 
     public float getVehiclePitch() {

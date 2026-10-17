@@ -396,6 +396,229 @@ public class LoaderModel extends EntityModel<LoaderRenderState> {
         return LayerDefinition.create(mesh, 512, 512);
     }
 
+    /**
+     * Original low-poly mining-loader body used by the giant variant.
+     *
+     * <p>The downloaded GLB was used only as a broad silhouette reference. No
+     * source mesh, topology, UV layout, or texture is included here. Keeping
+     * the same articulated part names lets both loader sizes share animation
+     * code while giving the giant a visibly different high-cab, long-hood,
+     * deep-bucket profile.</p>
+     */
+    public static LayerDefinition createGiantBodyLayer() {
+        MeshDefinition mesh = new MeshDefinition();
+        PartDefinition root = mesh.getRoot();
+
+        PartDefinition rearChassis = root.addOrReplaceChild(
+                "rear_chassis",
+                CubeListBuilder.create()
+                        // Deep mining frame and oversized rounded counterweight.
+                        .texOffs(264, 0).addBox(-11.0F, 4.0F, -45.0F, 22.0F, 11.0F, 45.0F)
+                        .texOffs(264, 0).addBox(-15.0F, -2.0F, -51.0F, 30.0F, 17.0F, 7.0F)
+                        .texOffs(264, 0).addBox(-13.5F, -7.0F, -49.0F, 27.0F, 6.0F, 5.0F)
+                        .texOffs(264, 0).addBox(-9.0F, 13.0F, -53.0F, 18.0F, 3.0F, 4.0F)
+                        // Long stepped power module and radiator banks.
+                        .texOffs(0, 84).addBox(-12.0F, -10.0F, -43.0F, 24.0F, 15.0F, 33.0F)
+                        .texOffs(0, 84).addBox(-10.5F, -15.0F, -40.0F, 21.0F, 5.0F, 25.0F)
+                        .texOffs(184, 84).addBox(-9.0F, -8.0F, -44.0F, 18.0F, 11.0F, 1.0F)
+                        .texOffs(184, 84).addBox(-12.5F, -7.0F, -38.0F, 1.0F, 10.0F, 24.0F)
+                        .texOffs(184, 84).addBox(11.5F, -7.0F, -38.0F, 1.0F, 10.0F, 24.0F)
+                        // Twin stacks and air cleaner make the giant recognizable at range.
+                        .texOffs(364, 164).addBox(6.0F, -28.0F, -23.0F, 3.0F, 14.0F, 3.0F)
+                        .texOffs(364, 164).addBox(5.5F, -29.5F, -23.5F, 4.0F, 2.0F, 4.0F)
+                        .texOffs(364, 164).addBox(-9.5F, -23.0F, -25.0F, 5.0F, 9.0F, 5.0F)
+                        .texOffs(364, 164).addBox(-10.5F, -25.0F, -26.0F, 7.0F, 2.0F, 7.0F)
+                        // Wide service decks over the rear tires.
+                        .texOffs(0, 84).addBox(-22.0F, -5.0F, -43.0F, 10.0F, 3.0F, 31.0F)
+                        .texOffs(0, 84).addBox(12.0F, -5.0F, -43.0F, 10.0F, 3.0F, 31.0F),
+                PartPose.ZERO
+        );
+
+        // A separate sloped hood breaks the boxy standard-loader silhouette.
+        rearChassis.addOrReplaceChild(
+                "sloped_engine_hood",
+                CubeListBuilder.create()
+                        .texOffs(0, 84).addBox(-11.0F, -4.0F, -16.0F, 22.0F, 8.0F, 31.0F)
+                        .texOffs(184, 84).addBox(-11.5F, -1.5F, -13.0F, 1.0F, 7.0F, 24.0F)
+                        .texOffs(184, 84).addBox(10.5F, -1.5F, -13.0F, 1.0F, 7.0F, 24.0F),
+                PartPose.offsetAndRotation(0.0F, -15.0F, -28.0F, -0.14F, 0.0F, 0.0F)
+        );
+
+        rearChassis.addOrReplaceChild(
+                "rear_left_wheel",
+                giantWheel(true),
+                PartPose.offset(-17.0F, 9.0F, -33.0F)
+        );
+        rearChassis.addOrReplaceChild(
+                "rear_right_wheel",
+                giantWheel(false),
+                PartPose.offset(17.0F, 9.0F, -33.0F)
+        );
+
+        PartDefinition cab = rearChassis.addOrReplaceChild(
+                "cab",
+                CubeListBuilder.create()
+                        // Elevated panoramic mining cab.
+                        .texOffs(264, 0).addBox(-12.0F, -4.0F, -11.0F, 24.0F, 4.0F, 21.0F)
+                        .texOffs(0, 84).addBox(-14.0F, -32.0F, -12.0F, 28.0F, 4.0F, 23.0F)
+                        .texOffs(0, 84).addBox(-13.0F, -28.0F, 8.0F, 3.0F, 24.0F, 3.0F)
+                        .texOffs(0, 84).addBox(10.0F, -28.0F, 8.0F, 3.0F, 24.0F, 3.0F)
+                        .texOffs(0, 84).addBox(-13.0F, -28.0F, -11.0F, 3.0F, 24.0F, 3.0F)
+                        .texOffs(0, 84).addBox(10.0F, -28.0F, -11.0F, 3.0F, 24.0F, 3.0F)
+                        .texOffs(364, 164).addBox(-9.5F, -8.0F, 8.0F, 19.0F, 5.0F, 2.0F)
+                        // Operator seat, console, controls, mirrors and access stairs.
+                        .texOffs(364, 164).addBox(-4.5F, -8.0F, -5.0F, 9.0F, 8.0F, 3.0F)
+                        .texOffs(364, 164).addBox(-4.5F, -1.0F, -5.0F, 9.0F, 3.0F, 9.0F)
+                        .texOffs(364, 164).addBox(-6.0F, -4.0F, 5.0F, 12.0F, 4.0F, 3.0F)
+                        .texOffs(364, 164).addBox(-16.0F, -24.0F, 7.0F, 3.0F, 7.0F, 5.0F)
+                        .texOffs(364, 164).addBox(13.0F, -24.0F, 7.0F, 3.0F, 7.0F, 5.0F)
+                        .texOffs(264, 0).addBox(-18.0F, -2.0F, -7.0F, 5.0F, 17.0F, 12.0F)
+                        .texOffs(0, 84).addBox(-17.0F, -18.0F, -8.0F, 1.5F, 17.0F, 1.5F)
+                        .texOffs(0, 84).addBox(-17.0F, -18.0F, 5.0F, 1.5F, 17.0F, 1.5F)
+                        .texOffs(0, 84).addBox(-17.0F, -18.0F, -8.0F, 1.5F, 1.5F, 14.5F),
+                PartPose.offset(0.0F, -3.0F, 2.0F)
+        );
+        PartDefinition beaconBase = cab.addOrReplaceChild(
+                "beacon_base",
+                CubeListBuilder.create().texOffs(454, 0)
+                        .addBox(-3.0F, -36.0F, -2.5F, 6.0F, 4.0F, 6.0F),
+                PartPose.ZERO
+        );
+        beaconBase.addOrReplaceChild(
+                "beacon_reflector",
+                CubeListBuilder.create().texOffs(454, 0)
+                        .addBox(-2.0F, -35.5F, -2.0F, 4.0F, 3.0F, 5.0F),
+                PartPose.ZERO
+        );
+
+        PartDefinition frontChassis = root.addOrReplaceChild(
+                "front_chassis",
+                CubeListBuilder.create()
+                        .texOffs(264, 0).addBox(-12.0F, 3.0F, -1.0F, 24.0F, 12.0F, 28.0F)
+                        .texOffs(264, 0).addBox(-14.0F, 0.0F, 2.0F, 28.0F, 5.0F, 20.0F)
+                        // Heavy pivot tower and articulated steering knuckle.
+                        .texOffs(0, 84).addBox(-12.0F, -11.0F, 3.0F, 5.0F, 16.0F, 11.0F)
+                        .texOffs(0, 84).addBox(7.0F, -11.0F, 3.0F, 5.0F, 16.0F, 11.0F)
+                        .texOffs(0, 84).addBox(-8.0F, -5.0F, 6.0F, 16.0F, 5.0F, 7.0F)
+                        .texOffs(364, 84).addBox(-14.0F, 9.0F, -3.0F, 5.0F, 4.0F, 10.0F)
+                        .texOffs(364, 84).addBox(9.0F, 9.0F, -3.0F, 5.0F, 4.0F, 10.0F)
+                        // Front service decks and work lamps.
+                        .texOffs(0, 84).addBox(-22.0F, -5.0F, 6.0F, 10.0F, 3.0F, 25.0F)
+                        .texOffs(0, 84).addBox(12.0F, -5.0F, 6.0F, 10.0F, 3.0F, 25.0F)
+                        .texOffs(364, 164).addBox(-12.0F, -13.0F, 8.0F, 4.0F, 4.0F, 3.0F)
+                        .texOffs(364, 164).addBox(8.0F, -13.0F, 8.0F, 4.0F, 4.0F, 3.0F),
+                PartPose.ZERO
+        );
+
+        frontChassis.addOrReplaceChild(
+                "front_left_wheel",
+                giantWheel(true),
+                PartPose.offset(-17.0F, 9.0F, 19.0F)
+        );
+        frontChassis.addOrReplaceChild(
+                "front_right_wheel",
+                giantWheel(false),
+                PartPose.offset(17.0F, 9.0F, 19.0F)
+        );
+
+        frontChassis.addOrReplaceChild(
+                "left_lift_cylinder",
+                CubeListBuilder.create()
+                        .texOffs(364, 84).addBox(-2.0F, -2.0F, 0.0F, 4.0F, 4.0F, 22.0F)
+                        .texOffs(364, 84).addBox(-1.25F, -1.25F, 20.0F, 2.5F, 2.5F, 16.0F),
+                PartPose.offset(-12.0F, 4.0F, 7.0F)
+        );
+        frontChassis.addOrReplaceChild(
+                "right_lift_cylinder",
+                CubeListBuilder.create()
+                        .texOffs(364, 84).addBox(-2.0F, -2.0F, 0.0F, 4.0F, 4.0F, 22.0F)
+                        .texOffs(364, 84).addBox(-1.25F, -1.25F, 20.0F, 2.5F, 2.5F, 16.0F),
+                PartPose.offset(12.0F, 4.0F, 7.0F)
+        );
+
+        PartDefinition liftArms = frontChassis.addOrReplaceChild(
+                "lift_arms",
+                CubeListBuilder.create()
+                        // Huge torque tube at the boom pivot.
+                        .texOffs(0, 174).addBox(-14.0F, -4.0F, -2.0F, 28.0F, 8.0F, 8.0F),
+                PartPose.offset(0.0F, -5.0F, 8.0F)
+        );
+
+        // Long diagonal mining-loader arms instead of the standard stepped boom.
+        liftArms.addOrReplaceChild(
+                "left_diagonal_arm",
+                CubeListBuilder.create()
+                        .texOffs(0, 174).addBox(-3.0F, -3.5F, 0.0F, 6.0F, 7.0F, 40.0F)
+                        .texOffs(0, 174).addBox(-3.5F, -4.5F, 28.0F, 7.0F, 9.0F, 12.0F),
+                PartPose.offsetAndRotation(-11.0F, 0.0F, 2.0F, -0.43F, 0.0F, 0.0F)
+        );
+        liftArms.addOrReplaceChild(
+                "right_diagonal_arm",
+                CubeListBuilder.create()
+                        .texOffs(0, 174).addBox(-3.0F, -3.5F, 0.0F, 6.0F, 7.0F, 40.0F)
+                        .texOffs(0, 174).addBox(-3.5F, -4.5F, 28.0F, 7.0F, 9.0F, 12.0F),
+                PartPose.offsetAndRotation(11.0F, 0.0F, 2.0F, -0.43F, 0.0F, 0.0F)
+        );
+        liftArms.addOrReplaceChild(
+                "arm_crossmember",
+                CubeListBuilder.create().texOffs(0, 174)
+                        .addBox(-11.0F, -3.0F, -3.0F, 22.0F, 6.0F, 6.0F),
+                PartPose.offsetAndRotation(0.0F, 14.0F, 34.0F, -0.43F, 0.0F, 0.0F)
+        );
+
+        liftArms.addOrReplaceChild(
+                "zbar_linkage",
+                CubeListBuilder.create()
+                        .texOffs(364, 84).addBox(-2.5F, -10.0F, -3.0F, 5.0F, 17.0F, 5.0F)
+                        .texOffs(364, 84).addBox(-2.5F, 0.0F, -18.0F, 5.0F, 5.0F, 18.0F)
+                        .texOffs(0, 174).addBox(-2.0F, 6.0F, 1.0F, 4.0F, 4.0F, 24.0F),
+                PartPose.offset(0.0F, 0.0F, 18.0F)
+        );
+
+        liftArms.addOrReplaceChild(
+                "bucket",
+                CubeListBuilder.create()
+                        // Deep high-back rock bucket using the gameplay lip anchor.
+                        .texOffs(184, 174).addBox(-22.0F, -13.0F, -2.0F, 44.0F, 17.0F, 3.0F)
+                        .texOffs(184, 174).addBox(-22.0F, 3.0F, 0.0F, 44.0F, 3.5F, 6.0F)
+                        .texOffs(184, 174).addBox(-22.0F, 4.5F, 5.0F, 44.0F, 2.0F, 13.0F)
+                        .texOffs(184, 174).addBox(-23.0F, 4.5F, 18.0F, 46.0F, 2.5F, 4.0F)
+                        // Side cheeks and spill guard.
+                        .texOffs(184, 174).addBox(-24.0F, -14.0F, -2.0F, 2.0F, 20.5F, 23.0F)
+                        .texOffs(184, 174).addBox(22.0F, -14.0F, -2.0F, 2.0F, 20.5F, 23.0F)
+                        .texOffs(184, 174).addBox(-22.0F, -17.0F, -5.0F, 44.0F, 4.0F, 6.0F)
+                        .texOffs(184, 174).addBox(-3.0F, -18.0F, -1.0F, 6.0F, 6.0F, 5.0F)
+                        // Eight replaceable rock teeth.
+                        .texOffs(184, 174).addBox(-22.0F, 4.0F, 22.0F, 3.0F, 3.0F, 6.0F)
+                        .texOffs(184, 174).addBox(-16.0F, 4.0F, 22.0F, 3.0F, 3.0F, 6.0F)
+                        .texOffs(184, 174).addBox(-10.0F, 4.0F, 22.0F, 3.0F, 3.0F, 6.0F)
+                        .texOffs(184, 174).addBox(-4.0F, 4.0F, 22.0F, 3.0F, 3.0F, 6.0F)
+                        .texOffs(184, 174).addBox(3.0F, 4.0F, 22.0F, 3.0F, 3.0F, 6.0F)
+                        .texOffs(184, 174).addBox(9.0F, 4.0F, 22.0F, 3.0F, 3.0F, 6.0F)
+                        .texOffs(184, 174).addBox(15.0F, 4.0F, 22.0F, 3.0F, 3.0F, 6.0F)
+                        .texOffs(184, 174).addBox(21.0F, 4.0F, 22.0F, 3.0F, 3.0F, 6.0F),
+                PartPose.offset(0.0F, 19.5F, 34.0F)
+        );
+
+        return LayerDefinition.create(mesh, 512, 512);
+    }
+
+    private static CubeListBuilder giantWheel(boolean left) {
+        float rimX = left ? -7.5F : 4.5F;
+        float hubX = left ? -8.5F : 6.0F;
+        return CubeListBuilder.create()
+                // Oversized 30 px mining tire: visibly larger than the standard wheel.
+                .texOffs(0, 0).addBox(-7.0F, -15.0F, -6.0F, 14.0F, 30.0F, 12.0F)
+                .texOffs(0, 0).addBox(-7.0F, -14.0F, -10.0F, 14.0F, 28.0F, 20.0F)
+                .texOffs(0, 0).addBox(-7.0F, -11.5F, -13.0F, 14.0F, 23.0F, 26.0F)
+                .texOffs(0, 0).addBox(-7.0F, -8.0F, -15.0F, 14.0F, 16.0F, 30.0F)
+                .texOffs(164, 0).addBox(rimX, -9.0F, -9.0F, 3.0F, 18.0F, 18.0F)
+                .texOffs(164, 0).addBox(rimX, -10.0F, -4.5F, 3.0F, 20.0F, 9.0F)
+                .texOffs(164, 0).addBox(rimX, -4.5F, -10.0F, 3.0F, 9.0F, 20.0F)
+                .texOffs(164, 0).addBox(hubX, -5.0F, -5.0F, 2.5F, 10.0F, 10.0F)
+                .texOffs(164, 0).addBox(hubX, -3.0F, -7.0F, 2.5F, 6.0F, 14.0F);
+    }
+
     @Override
     public void setupAnim(LoaderRenderState state) {
         // 1. Articulated Steering: Front chassis turns with vehicle steering

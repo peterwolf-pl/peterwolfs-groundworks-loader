@@ -3,6 +3,7 @@ package com.piotrek.groundworksloader.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import com.piotrek.groundworks.api.material.GranularComposition;
 import com.piotrek.groundworks.api.material.GranularMaterial;
 import com.piotrek.groundworks.api.material.GranularMaterialRegistry;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -13,24 +14,23 @@ import net.minecraft.resources.Identifier;
 import org.joml.Vector3f;
 
 /**
- * Renders the loader bucket contents as a generated loose-material mound.
+ * Renders the loader bucket contents as a generated loose-material heaped mound.
  *
- * <p>The mesh is independent from material IDs. The currently carried
- * {@link GranularMaterial} supplies its source block, and that block supplies the
- * texture namespace/path. Adding another Groundworks material therefore does not
- * require another loader model part or another material switch statement.
+ * <p>Supports mixed materials with multi-texture patch sampling, and dynamically
+ * scales to a prominent, crowned volumetric mound spanning the full 2.8m width
+ * and depth of the wheel loader bucket.</p>
  */
 public final class GranularBucketContentsRenderer {
 
-    // LoaderModel bucket hierarchy, shared here so the loose-material mesh follows
-    // the exact same articulated front frame, boom and bucket transforms.
+    // LoaderModel bucket hierarchy transforms
     private static final float LIFT_ARM_Y_PX = -5.0F;
     private static final float LIFT_ARM_Z_PX = 8.0F;
     private static final float BUCKET_Y_PX = 19.5F;
     private static final float BUCKET_Z_PX = 34.0F;
 
-    private static final int X_SEGMENTS = 6;
-    private static final int Z_SEGMENTS = 5;
+    private static final int X_SEGMENTS = 8;
+    private static final int Z_SEGMENTS = 7;
+    private static final long VISUAL_SEED = 0x574845454C4C4F41L; // "WHEELLOA"
 
     private GranularBucketContentsRenderer() {}
 
@@ -39,13 +39,12 @@ public final class GranularBucketContentsRenderer {
             PoseStack stack,
             SubmitNodeCollector collector
     ) {
-        if (state.carriedUnits <= 0 || state.carriedMaterialId <= 0 || state.fillRatio <= 0.0F) {
+        if (state.carriedUnits <= 0 || state.fillRatio <= 0.0F) {
             return;
         }
 
-        GranularMaterial material = GranularMaterialRegistry.byId(state.carriedMaterialId);
-        Identifier texture = textureFor(material);
-        if (texture == null) {
+        GranularComposition composition = compositionFrom(state);
+        if (composition.isEmpty()) {
             return;
         }
 
@@ -54,23 +53,57 @@ public final class GranularBucketContentsRenderer {
         stack.pushPose();
 
         // front_chassis
-        stack.rotateDegrees(Axis.YP, state.steerAngle);
+        stack.mulPose(Axis.YP.rotationDegrees(state.steerAngle));
 
         // lift_arms
         stack.translate(0.0F, LIFT_ARM_Y_PX / 16.0F, LIFT_ARM_Z_PX / 16.0F);
-        stack.rotateDegrees(Axis.XP, state.boomAngle);
+        stack.mulPose(Axis.XP.rotationDegrees(state.boomAngle));
 
         // bucket
         stack.translate(0.0F, BUCKET_Y_PX / 16.0F, BUCKET_Z_PX / 16.0F);
-        stack.rotateDegrees(Axis.XP, -state.bucketAngle);
+        stack.mulPose(Axis.XP.rotationDegrees(-state.bucketAngle));
 
-        collector.submitCustomGeometry(
-                stack,
-                RenderTypes.entityCutout(texture),
-                (pose, consumer) -> emitMound(consumer, pose, fill, state.lightCoords)
-        );
+        int[] counts = composition.toArray();
+        for (int materialId = 1; materialId < counts.length; materialId++) {
+            if (counts[materialId] <= 0) {
+                continue;
+            }
+
+            GranularMaterial material = GranularMaterialRegistry.byId(materialId);
+            Identifier texture = textureFor(material);
+            if (texture == null) {
+                continue;
+            }
+
+            final int selectedMaterialId = materialId;
+            collector.submitCustomGeometry(
+                    stack,
+                    RenderTypes.entityCutout(texture),
+                    (pose, consumer) -> emitMoundForMaterial(
+                            consumer,
+                            pose,
+                            fill,
+                            state.lightCoords,
+                            composition,
+                            selectedMaterialId
+                    )
+            );
+        }
 
         stack.popPose();
+    }
+
+    private static GranularComposition compositionFrom(LoaderRenderState state) {
+        GranularComposition composition = new GranularComposition();
+        if (state.dirtUnits > 0) composition.add(GranularMaterialRegistry.DIRT, state.dirtUnits);
+        if (state.sandUnits > 0) composition.add(GranularMaterialRegistry.SAND, state.sandUnits);
+        if (state.gravelUnits > 0) composition.add(GranularMaterialRegistry.GRAVEL, state.gravelUnits);
+        if (state.cobblestoneUnits > 0) composition.add(GranularMaterialRegistry.COBBLESTONE, state.cobblestoneUnits);
+
+        if (composition.isEmpty() && state.carriedMaterialId > 0 && state.carriedUnits > 0) {
+            composition.add(GranularMaterialRegistry.byId(state.carriedMaterialId), state.carriedUnits);
+        }
+        return composition;
     }
 
     static Identifier textureFor(GranularMaterial material) {
@@ -89,23 +122,25 @@ public final class GranularBucketContentsRenderer {
         );
     }
 
-    private static void emitMound(
+    private static void emitMoundForMaterial(
             VertexConsumer consumer,
             PoseStack.Pose pose,
             float fill,
-            int packedLight
+            int packedLight,
+            GranularComposition composition,
+            int selectedMaterialId
     ) {
-        // At low fill the material occupies only the rear-middle of the bowl.
-        // As volume increases, the footprint grows toward the side plates and lip.
+        // Grand heaped footprint spanning the full 44px (2.75m) inner bucket width
         float footprint = (float) Math.sqrt(fill);
-        float halfWidthPx = lerp(9.0F, 20.5F, footprint);
-        float backZPx = lerp(6.5F, 3.0F, footprint);
-        float frontZPx = lerp(11.5F, 18.0F, footprint);
-        float baseYPx = 4.15F;
+        float halfWidthPx = lerp(12.0F, 21.8F, footprint);
+        float backZPx = lerp(6.0F, 1.8F, footprint);
+        float frontZPx = lerp(12.0F, 20.8F, footprint);
+        float baseYPx = 4.2F;
 
-        // Full bucket rises close to the old spill-guard height, but the surface
-        // remains a mound rather than two rectangular cuboids.
-        float peakRisePx = lerp(1.4F, 9.2F, fill);
+        // Peak rise forms a proud, majestic mound crowned near the spill guard
+        float peakRisePx = lerp(2.2F, 15.8F, fill);
+        float sideDrop = lerp(0.50F, 0.28F, fill);
+        float longDrop = lerp(0.45F, 0.25F, fill);
 
         Vector3f[][] vertices = new Vector3f[X_SEGMENTS + 1][Z_SEGMENTS + 1];
 
@@ -118,29 +153,37 @@ public final class GranularBucketContentsRenderer {
                 float fz = (float) z / Z_SEGMENTS;
                 float localZ = lerp(backZPx, frontZPx, fz);
 
-                // Peak is slightly rear of center, as loose material loads against
-                // the back wall during scooping. Height falls continuously toward
-                // the side cheeks and cutting lip.
-                float longitudinal = Math.abs((fz - 0.38F) / 0.62F);
+                // Peak is crowned slightly behind center against backplate, falling
+                // off smoothly to cheek edges and front cutting lip.
+                float longitudinal = Math.abs((fz - 0.40F) / 0.60F);
                 float profile = 1.0F
-                        - 0.52F * nx * nx
-                        - 0.38F * longitudinal * longitudinal;
-                profile = Math.clamp(profile, 0.12F, 1.0F);
+                        - sideDrop * nx * nx
+                        - longDrop * longitudinal * longitudinal;
+                profile = Math.clamp(profile, 0.12F, 1.05F);
 
-                // Small deterministic crown breaks the perfectly planar look without
-                // introducing animation or nondeterministic visual jitter.
-                float crown = 0.16F
-                        * (float) Math.sin((fx * 2.0F + fz * 1.5F) * Math.PI);
-                float surfaceYPx = baseYPx - peakRisePx * Math.clamp(profile + crown, 0.10F, 1.0F);
+                // Organic granular ripple and crest variation
+                float crown = 0.16F * (float) Math.sin((fx * 2.5F + fz * 2.0F) * Math.PI)
+                        + 0.08F * (float) Math.cos((fx * 4.0F - fz * 3.0F) * Math.PI);
+                float surfaceYPx = baseYPx - peakRisePx * Math.clamp(profile + crown * fill, 0.10F, 1.15F);
 
                 vertices[x][z] = px(localX, surfaceYPx, localZ);
             }
         }
 
-        // Faceted top surface. The segment count is high enough to read as a loose
-        // pile while staying very cheap compared with terrain meshing.
+        // Top faceted mound surface
         for (int x = 0; x < X_SEGMENTS; x++) {
             for (int z = 0; z < Z_SEGMENTS; z++) {
+                int sampled = composition.sampleVisualMaterial(
+                        VISUAL_SEED,
+                        x,
+                        6,
+                        z
+                );
+
+                if (sampled != selectedMaterialId) {
+                    continue;
+                }
+
                 Vector3f v00 = vertices[x][z];
                 Vector3f v01 = vertices[x][z + 1];
                 Vector3f v11 = vertices[x + 1][z + 1];
@@ -158,13 +201,11 @@ public final class GranularBucketContentsRenderer {
             }
         }
 
-        // Close the perimeter down to the bucket floor. These skirts make the pile
-        // feel volumetric from side views but follow the sloped top edge, so the
-        // contents never read as a rectangular box.
-        emitSideX(consumer, pose, vertices, 0, baseYPx, -1.0F, packedLight);
-        emitSideX(consumer, pose, vertices, X_SEGMENTS, baseYPx, 1.0F, packedLight);
-        emitSideZ(consumer, pose, vertices, 0, baseYPx, -1.0F, packedLight);
-        emitSideZ(consumer, pose, vertices, Z_SEGMENTS, baseYPx, 1.0F, packedLight);
+        // Side skirt seals down to bucket floor
+        emitSideX(consumer, pose, vertices, 0, baseYPx, -1.0F, packedLight, composition, selectedMaterialId);
+        emitSideX(consumer, pose, vertices, X_SEGMENTS, baseYPx, 1.0F, packedLight, composition, selectedMaterialId);
+        emitSideZ(consumer, pose, vertices, 0, baseYPx, -1.0F, packedLight, composition, selectedMaterialId);
+        emitSideZ(consumer, pose, vertices, Z_SEGMENTS, baseYPx, 1.0F, packedLight, composition, selectedMaterialId);
     }
 
     private static void emitSideX(
@@ -174,10 +215,22 @@ public final class GranularBucketContentsRenderer {
             int xIndex,
             float baseYPx,
             float normalX,
-            int packedLight
+            int packedLight,
+            GranularComposition composition,
+            int selectedMaterialId
     ) {
         Vector3f normal = new Vector3f(normalX, 0.0F, 0.0F);
         for (int z = 0; z < Z_SEGMENTS; z++) {
+            int sampled = composition.sampleVisualMaterial(
+                    VISUAL_SEED,
+                    xIndex,
+                    3,
+                    z
+            );
+            if (sampled != selectedMaterialId) {
+                continue;
+            }
+
             Vector3f top0 = vertices[xIndex][z];
             Vector3f top1 = vertices[xIndex][z + 1];
             Vector3f bottom1 = new Vector3f(top1.x, baseYPx / 16.0F, top1.z);
@@ -199,10 +252,22 @@ public final class GranularBucketContentsRenderer {
             int zIndex,
             float baseYPx,
             float normalZ,
-            int packedLight
+            int packedLight,
+            GranularComposition composition,
+            int selectedMaterialId
     ) {
         Vector3f normal = new Vector3f(0.0F, 0.0F, normalZ);
         for (int x = 0; x < X_SEGMENTS; x++) {
+            int sampled = composition.sampleVisualMaterial(
+                    VISUAL_SEED,
+                    x,
+                    3,
+                    zIndex
+            );
+            if (sampled != selectedMaterialId) {
+                continue;
+            }
+
             Vector3f top0 = vertices[x][zIndex];
             Vector3f top1 = vertices[x + 1][zIndex];
             Vector3f bottom1 = new Vector3f(top1.x, baseYPx / 16.0F, top1.z);

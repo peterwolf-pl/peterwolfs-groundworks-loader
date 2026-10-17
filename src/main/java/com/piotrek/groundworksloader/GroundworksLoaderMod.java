@@ -2,11 +2,12 @@ package com.piotrek.groundworksloader;
 
 import com.piotrek.groundworksloader.command.LoaderCommand;
 import com.piotrek.groundworksloader.entity.GroundworksLoaderEntity;
+import com.piotrek.groundworksloader.entity.LoaderVariant;
 import com.piotrek.groundworksloader.item.LoaderItem;
 import com.piotrek.groundworksloader.network.LoaderInputPayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.Registry;
@@ -38,10 +39,26 @@ public class GroundworksLoaderMod implements ModInitializer {
     public static final EntityType<GroundworksLoaderEntity> LOADER = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
             LOADER_KEY,
-            EntityType.Builder.of(GroundworksLoaderEntity::new, MobCategory.MISC)
+            EntityType.Builder.<GroundworksLoaderEntity>of(
+                            (type, level) -> new GroundworksLoaderEntity(type, level, LoaderVariant.STANDARD),
+                            MobCategory.MISC)
                     .sized(3.0F, 2.8F)
                     .clientTrackingRange(10)
                     .build(LOADER_KEY)
+    );
+
+    public static final ResourceKey<EntityType<?>> GIANT_LOADER_KEY =
+            ResourceKey.create(Registries.ENTITY_TYPE, id("giant_loader"));
+
+    public static final EntityType<GroundworksLoaderEntity> GIANT_LOADER = Registry.register(
+            BuiltInRegistries.ENTITY_TYPE,
+            GIANT_LOADER_KEY,
+            EntityType.Builder.<GroundworksLoaderEntity>of(
+                            (type, level) -> new GroundworksLoaderEntity(type, level, LoaderVariant.GIANT),
+                            MobCategory.MISC)
+                    .sized(4.8F, 4.5F)
+                    .clientTrackingRange(12)
+                    .build(GIANT_LOADER_KEY)
     );
 
     public static final SoundEvent ENGINE_LOOP = Registry.register(
@@ -80,7 +97,20 @@ public class GroundworksLoaderMod implements ModInitializer {
     public static final LoaderItem LOADER_ITEM = Registry.register(
             BuiltInRegistries.ITEM,
             LOADER_ITEM_KEY,
-            new LoaderItem(new Item.Properties().setId(LOADER_ITEM_KEY).stacksTo(1))
+            new LoaderItem(
+                    new Item.Properties().setId(LOADER_ITEM_KEY).stacksTo(1),
+                    LOADER)
+    );
+
+    public static final ResourceKey<Item> GIANT_LOADER_ITEM_KEY =
+            ResourceKey.create(Registries.ITEM, id("giant_loader"));
+
+    public static final LoaderItem GIANT_LOADER_ITEM = Registry.register(
+            BuiltInRegistries.ITEM,
+            GIANT_LOADER_ITEM_KEY,
+            new LoaderItem(
+                    new Item.Properties().setId(GIANT_LOADER_ITEM_KEY).stacksTo(1),
+                    GIANT_LOADER)
     );
 
     public static final ResourceKey<CreativeModeTab> TOOLS_AND_UTILITIES_TAB = ResourceKey.create(
@@ -92,7 +122,7 @@ public class GroundworksLoaderMod implements ModInitializer {
     public void onInitialize() {
         LOGGER.info("Initializing Peterwolf's Groundworks Loader for MC 26.3...");
 
-        PayloadTypeRegistry.serverboundPlay().register(
+        PayloadTypeRegistry.playC2S().register(
                 LoaderInputPayload.TYPE, LoaderInputPayload.CODEC
         );
 
@@ -118,8 +148,9 @@ public class GroundworksLoaderMod implements ModInitializer {
                 (dispatcher, registryAccess, environment) -> LoaderCommand.register(dispatcher)
         );
 
-        CreativeModeTabEvents.modifyOutputEvent(TOOLS_AND_UTILITIES_TAB).register(output -> {
+        ItemGroupEvents.modifyEntriesEvent(TOOLS_AND_UTILITIES_TAB).register(output -> {
             output.accept(LOADER_ITEM);
+            output.accept(GIANT_LOADER_ITEM);
         });
     }
 }

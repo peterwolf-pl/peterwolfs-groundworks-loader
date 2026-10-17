@@ -11,7 +11,7 @@
     "homepage": "https://github.com/piotrek/peterwolfs-groundworks-loader"
   },
   "license": "MIT",
-  "icon": "assets/pw_groundworks_loader/textures/item/loader.png",
+  "icon": "assets/pw_groundworks_loader/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -22,9 +22,9 @@
     ]
   },
   "depends": {
-    "fabricloader": ">=0.19.5",
-    "minecraft": "~26.3",
-    "java": ">=25",
+    "fabricloader": ">=0.19.4",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
     "fabric-api": "*",
     "pw_groundworks": ">=0.1.0"
   },

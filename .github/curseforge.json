@@ -1,0 +1,26 @@
+{
+  "projectId": 1734004,
+  "title": "Peterwolf's Groundworks Loader",
+  "summary": "Heavy industrial wheel loader designed to scoop, load, carry and dump granular materials for Peterwolf's Groundworks.",
+  "description": "# Peterwolf's Groundworks Loader (Minecraft 26.3 Fabric)\n\nCiężka przemysłowa ładowarka kołowa przygotowana dla silnika materiałów sypkich **Peterwolf's Groundworks** na wersję **Minecraft 26.3 (Wilderness Bound)**.\n\n## 🚜 Wygląd i Model 3D\n\nModel ładowarki został zaprojektowany z dbałością o detale na podstawie referencyjnych ciężkich ładowarek kołowych (CAT / Volvo / SDLG):\n- **4 potężne koła budowlane**: szerokie opony z głębokimi klockami bieżnika w jodełkę, żółte felgi stalowe oraz wystające piasty przekładni planetarnych z wieńcem śrub. Koła obracają się płynnie podczas jazdy.\n- **Skręt przegubowy (Articulated Steering)**: rama ładowarki łamie się w centralnym przegubie za pomocą bocznych siłowników hydraulicznych.\n- **Przedział silnikowy i przeciwwaga**: żółta skośna pokrywa silnika z bocznymi żaluzjami nawiewu, tylny grill chłodnicy, masywna żeliwna przeciwwaga z zagłębionymi światłami, pionowa rura wydechowa z klapką przeciwdeszczową oraz cyklonowy filtr powietrza.\n- **Kabina ROPS/FOPS**: panoramiczne przyciemniane szyby bezpieczne, fotel operatora z podłokietnikami, kolumna kierownicy, joysticki hydrauliczne, konsola wskaźników, boczne drabinki wejściowe, żółte barierki ochronne, lusterka zewnętrzne i obrotowy kogut ostrzegawczy na dachu.\n- **Wysięgnik i kinematyka Z-Bar**: podwójne wygięte ramiona podnoszące z poprzecznicą wzmacniającą, siłowniki podnoszenia oraz centralna dźwignia kołyskowa Z-bar z siłownikiem wywrotu i łącznikiem łyżki.\n- **Ciężka łyżka załadunkowa**: szerokość 2.8m (zakrywa ślad kół), profil łyżki z 6 kutymi zębami krawędzi natarcia, noże boczne, płyty ślizgowe od spodu i daszek przeciwsypowy. Urobek jest renderowany jako osobny, nieregularny mesh usypanego materiału, a nie prostopadłościan.\n\n## Dwa warianty ładowarki\n\n- **Standardowa** — łyżka 2.8m i pojemność 2048 jednostek (4m³).\n- **Gigantyczna** — model powiększony 1.65×, łyżka 4.6m i pojemność 7680 jednostek (15m³), czyli pełna skrzynia wywrotki Groundworks za jednym razem.\n\nGigantyczną ładowarkę można postawić z osobnego itemu albo utworzyć komendą `/loader spawn_giant`.\n\n---\n\n## 🎮 Sterowanie\n\n| Klawisz | Funkcja |\n|---|---|\n| **W** | Jazda do przodu (napęd na 4 koła) |\n| **S** | Hamowanie / Bieg wsteczny |\n| **A** | Skręt w lewo (przegub ramy i kół) |\n| **D** | Skręt w prawo (przegub ramy i kół) |\n| **Strzałka w górę (↑)** | **Podnoszenie wysięgnika** (unoszenie łyżki do załadunku) |\n| **Strzałka w dół (↓)** | **Obniżanie wysięgnika** (opuszczanie łyżki do poziomu gruntu) |\n| **Strzałka w prawo (→)** | **Otwieranie / wysyp łyżki** (dumping urobku na hałdę lub wywrotkę) |\n| **Strzałka w lewo (←)** | **Zamykanie łyżki** (curling / zamykanie łyżki do transportu) |\n| **PPM na ładowarkę** | Wejście za kierownicę / jazda |\n| **Shift + LPM / PPM (pusta)** | Podniesienie pojazdu w formie itemu do ekwipunku |\n\n---\n\n## 🧱 Integracja z Peterwolf's Groundworks\n\n- **Nabieranie gruntu**: gdy łyżka jest opuszczona do poziomu gruntu lub zagłębiona, a ładowarka jedzie do przodu na hałdę materiału obsługiwanego przez Groundworks, krawędź tnąca skrawa mikrowoksele i ładuje je do łyżki.\n- **Samopoziomowanie**: podczas podnoszenia i opuszczania wysięgnika łyżka zachowuje ustawiony kąt. Operator zmienia go niezależnie strzałkami w lewo i w prawo.\n- **Transport**: zamknięta łyżka (Strzałka w lewo) bezpiecznie przewozi urobek bez gubienia materiału. Podniesienie pełnej, poziomej i niezamkniętej łyżki wysypuje dokładnie 1/3 ładunku, dlatego po wbiciu się w hałdę należy najpierw zamknąć łyżkę.\n- **Wysyp grawitacyjny**: po przechyleniu łyżki w dół (Strzałka w prawo powyżej 15°) urobek wysypuje się strugą w dół na ziemię pod krawędzią łyżki z cząsteczkami i dźwiękiem sypania.\n- **100% zachowanie objętości**: każda jednostka pobrana z gruntu trafia do łyżki, a każda jednostka wysypana trafia do terenu.\n- **Uniwersalna wizualizacja materiałów**: loader nie ma już osobnych modeli/tekstur dla dirt, sand i gravel. Mesh zawartości łyżki pobiera teksturę z `GranularMaterial.sourceBlock()`, więc cobblestone i kolejne materiały Groundworks nie wymagają dopisywania kolejnego wariantu w modelu ładowarki.\n- **Naturalny kształt urobku**: wraz z napełnianiem rośnie zarówno wysokość, jak i powierzchnia zajmowana przez materiał w łyżce. Górna powierzchnia jest profilowana i segmentowana, dzięki czemu urobek nie wygląda jak prostopadłościan.\n\n---\n\n## 🛠️ Kompilacja i uruchomienie\n\nMod jest w pełni zgodny z Minecraft **26.3**, Java **25** i Fabric API **0.160.7+26.3**.\n\n```bash\n./gradlew test build\n```\nZbudowany plik JAR znajduje się w `build/libs/pw_groundworks_loader-0.1.0+26.3.jar`.\n",
+  "enabled": true,
+  "releaseType": "release",
+  "changelogType": "markdown",
+  "changelog": "",
+  "manualRelease": false,
+  "media": {
+    "youtube": [],
+    "gallery": []
+  },
+  "dependencies": [
+    {
+      "slug": "fabric-api",
+      "type": "requiredDependency"
+    },
+    {
+      "slug": "peterwolfs-groundworks",
+      "type": "requiredDependency"
+    }
+  ],
+  "publishedVersion": null
+}
